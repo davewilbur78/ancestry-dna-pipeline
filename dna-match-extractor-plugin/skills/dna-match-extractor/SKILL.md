@@ -6,11 +6,11 @@ description: >
   "process my matches", "enrich my CSV", "build the match spreadsheet", "extract
   DNA data", "I have a new batch of matches", or provides a Genealogy Assistant
   CSV and an Ancestry kit URL. Handles any number of matches -- processes in
-  concurrent batches of 50. Calls the Ancestry API via Claude Code, collects tree
-  and common ancestor links via browser, and builds the enriched Excel workbook.
+  batches of 50. Collects shared-DNA data via in-browser fetch (Claude in Chrome),
+  builds verified compare links, and produces the enriched Excel workbook.
 license: CC-BY-NC-SA-4.0
 metadata:
-  version: "2.0"
+  version: "2.1"
   author: User + Claude collaboration
   base_skills: gra v8.5c, ashkenazi-genetic-genealogist
 ---
@@ -31,6 +31,22 @@ collected, leave it blank and note it. Never invent data.**
 
 ---
 
+## Environment Check (do this first)
+
+State which mode you are in and pick the matching collection path up front:
+
+- **Cowork (Claude desktop app):** the bash shell is a sandboxed Linux VM with no
+  access to the user's Chrome. `browser_cookie3` returns nothing. You MUST collect
+  via in-browser fetch (Step 2 primary path). The browser and the sandbox are
+  separate machines with separate filesystems -- data fetched in the browser comes
+  back as tool-output text, not via a shared CSV on disk.
+- **Local Claude Code:** the in-browser path still works and is preferred. The
+  `browser_cookie3` Python fallback is available here if a browser session is not.
+
+When in doubt, use the in-browser path -- it works in both.
+
+---
+
 ## Inputs Required
 
 Before starting, confirm you have:
@@ -42,6 +58,7 @@ Before starting, confirm you have:
 3. **Active tester config** -- confirm CLAUDE.md is loaded and the active tester
    config under `testers/` has been read. It supplies the line/surname mapping
    and group names used in Step 4.
+4. **A logged-in Ancestry browser tab** (for the in-browser collection path).
 
 If any of these is missing, ask for it before proceeding.
 
@@ -69,52 +86,107 @@ Report: N matches loaded, M with trees, K with common ancestors.
 
 ---
 
-## Step 2: API Data Collection (Claude Code)
+## Step 2: API Data Collection
 
-Use the repo script `fetch_shared_dna.py`, which takes the tester GUID as a
-parameter (never hardcoded). Pass `--kit-url` (or `--tester-guid`) and either
-`--input-csv` (the Genealogy Assistant export) or `--guids-file`.
+### PRIMARY PATH -- in-browser fetch (Claude in Chrome). Works in Cowork AND local.
 
-**Script behavior:**
-- Uses `browser_cookie3` to get Chrome cookies for `ancestry.com`
-- Calls this endpoint for every match GUID:
-  `https://www.ancestry.com/discoveryui-matches/parents/list/api/matchSharedDna/{TESTER_GUID}/{MATCH_GUID}`
-- Captures:
-  - `totalSharedCentimorgans` -> Unweighted cM
-  - `longestSharedSegment` -> Longest Segment
-  - `numSharedSegments` -> Segments
-- 150ms delay between requests; retries each failed request once
-- Saves results to `dna_api_results.csv` with columns: guid, unweighted_cm, longest_segment, segments
-- Prints a final summary: N succeeded, M failed (lists failed GUIDs)
+The match-shared-DNA endpoint is a GET and authenticates from the logged-in session
+with `credentials:"include"`. No cookie extraction, no Python, no auth handling.
+
+Navigate the Chrome tab to `https://www.ancestry.com` (must be logged in), then run a
+collector via `javascript_tool`. Capture per GUID:
+- `totalSharedCentimorgans` -> Unweighted cM
+- `longestSharedSegment` -> Longest Segment
+- `numSharedSegments` -> Segments
+
+Endpoint:
+`https://www.ancestry.com/discoveryui-matches/parents/list/api/matchSharedDna/{TESTER}/{MATCH}`
+
+**Hardened collector pattern (respect the javascript_tool quirks below):**
+
+```js
+// Kick off without top-level await; store to window; poll separately.
+window.__dnaStatus = "running";
+window.__dnaResults = [];
+(function(){
+  const TESTER = "{TESTER_GUID}";
+  const GUIDS = [ /* match GUIDs */ ];
+  const base = "https://www.ancestry.com/discoveryui-matches/parents/list/api/matchSharedDna/";
+  const out = [];
+  async function one(m, attempt){
+    try {
+      const r = await fetch(base + TESTER + "/" + m, {credentials:"include"});
+      const d = await r.json();
+      return {guid:m, unweighted_cm:d.totalSharedCentimorgans,
+              longest_segment:d.longestSharedSegment, segments:d.numSharedSegments};
+    } catch(e){
+      if(attempt < 2){ await new Promise(s=>setTimeout(s,500)); return one(m, attempt+1); }
+      return {guid:m, unweighted_cm:"", longest_segment:"", segments:""};
+    }
+  }
+  (async () => {
+    for(let i=0;i<GUIDS.length;i+=50){
+      const chunk = GUIDS.slice(i,i+50);
+      const res = await Promise.all(chunk.map(m=>one(m,1)));
+      out.push(...res);
+      await new Promise(s=>setTimeout(s,150));
+    }
+    window.__dnaResults = out;
+    window.__dnaStatus = "done";
+  })();
+})();
+"started";
+```
+
+Then poll with a separate call: read `window.__dnaStatus`. When `"done"`, read results.
+
+**Read results in chunks** to dodge the output cap (see quirks): pull 20 rows per call,
+e.g. `JSON.stringify(window.__dnaResults.slice(0,20))`, then `slice(20,40)`, etc. A
+single `browser_batch` of several `javascript_tool` calls can fetch all chunks at once.
+
+**javascript_tool quirks (do not rediscover these):**
+- Top-level `await` is unreliable and throws. Never use it. Fire async work without
+  awaiting, store to a `window` variable, set a status flag, and poll.
+- Output is truncated around ~1 KB. Slice large result sets into ~20-row chunks.
+- The browser and the bash sandbox do not share a filesystem. Do not write a CSV in
+  the browser and try to read it from bash -- return data as tool output.
 
 **Error handling:**
-- If browser_cookie3 fails: instruct user to ensure Chrome is open and logged into Ancestry
-- If >10% of requests fail: pause and alert the user before continuing
-- Never stop silently on failure
+- If >10% of requests fail: pause and alert the user (usually the tab is logged out
+  or navigated off ancestry.com). Re-confirm the session and retry the failed GUIDs.
+- Never stop silently on failure.
+
+### FALLBACK -- `fetch_shared_dna.py` + browser_cookie3 (local Claude Code ONLY).
+
+The repo script reads Chrome cookies directly and calls the same endpoint. It takes
+the tester GUID as a parameter (`--kit-url` or `--tester-guid`) plus `--input-csv`
+or `--guids-file`. **This does not work in Cowork** -- the sandbox cannot see the
+user's Chrome. Use only when running as local Claude Code without a browser session.
 
 ---
 
-## Step 3: Browser Link Collection (Claude in Chrome)
+## Step 3: Link Collection
 
-After API collection, collect hyperlinks that require browser navigation.
+### DEFAULT -- deterministic, verified URL construction (no per-profile scraping)
 
-**For each match with a linked tree (Family Tree column is not "No trees"):**
-- Navigate to the match profile page (ProfileURL)
-- Find the tree link in the Trees tab
-- Capture the direct tree URL
-- Store as: tree_url for that GUID
+Build per-match links straight from the GUIDs. Both patterns are confirmed present
+on live Ancestry; do not fabricate anything beyond them:
 
-**For each match showing "Common Ancestor":**
-- Navigate to the match profile page
-- Find the Common Ancestor link
-- Capture the URL Ancestry uses for that link
-- Store as: ca_url for that GUID
+- Profile / compare:        `https://www.ancestry.com/dna/matches/{TESTER}/compare/{MATCH}`
+- Tree + ThruLines compare: `https://www.ancestry.com/discoveryui-matches/compare/{TESTER}/with/{MATCH}`
 
-Save both sets to `dna_browser_links.csv` with columns: guid, tree_url, ca_url
+These cover "view their tree" and "view common ancestor" for research triage without
+loading any profile pages. The compare-with URL lands on Ancestry's comparison view
+rather than a deep tree-person link -- sufficient for triage.
 
-If browser automation is not available in this session, note which links are
-outstanding and skip to Step 4. The spreadsheet will be built with empty
-hyperlink slots that can be filled in a future pass.
+### OPTIONAL -- deep links (only if exact tree-person links are needed)
+
+Run a per-profile browser pass over the **priority subset only** (matches passing
+longest >= 20 AND AScM >= 12), not the whole batch. Note: the bulk `treeData` and
+`commonAncestors` endpoints are POST-only, header-gated, and cached by the SPA;
+calling them directly returns a 303 auth/CSRF redirect. Replaying them requires
+hooking the live XHR before first paint and is advanced -- not required for a usable
+workbook. Skip unless the user specifically asks for deep tree-person links.
 
 ---
 
@@ -132,9 +204,9 @@ Merge all data sources. Build the workbook using openpyxl.
 | D   | Unweighted cM   | API               | Integer    |
 | E   | Segments        | API               | Integer    |
 | F   | Weighted cM     | CSV (Shared cM)   | Integer    |
-| G   | Family Tree     | CSV + browser     | Hyperlink  |
+| G   | Family Tree     | CSV + compare URL  | Hyperlink  |
 | H   | Tree Size       | CSV               | Integer    |
-| I   | Common Ancestor | CSV + browser     | Hyperlink  |
+| I   | Common Ancestor | CSV + compare URL  | Hyperlink  |
 | J   | Line Assignment | Derived + user    | Color fill |
 | K   | Groups          | CSV               | Text       |
 | L   | Notes           | CSV               | Text       |
@@ -143,8 +215,8 @@ Merge all data sources. Build the workbook using openpyxl.
 
 ### Hyperlinks
 - Match Name: links to ProfileURL (match profile page, not shared-matches tab)
-- Family Tree: links to tree_url if collected, otherwise text only
-- Common Ancestor: links to ca_url if collected, otherwise text only
+- Family Tree: links to the compare URL if the match has a tree, otherwise text only
+- Common Ancestor: links to the compare-with URL if Ancestry shows a common ancestor
 
 ### AScM Formula
 Use Excel formula: `=IFERROR(D{row}/E{row},"")` -- never hardcode calculated values.
@@ -196,8 +268,8 @@ Present the completed spreadsheet file.
 Report:
 - Total matches processed
 - Tier breakdown: X dark green / Y med green / Z light green / N red
-- Tree links collected: X of Y
-- Common ancestor links collected: X of Y
+- Tree links built: X of Y
+- Common ancestor links built: X of Y
 - Any failures or outstanding items
 
 ---
@@ -206,8 +278,8 @@ Report:
 
 This pipeline is open-ended. Any number of matches can be processed.
 
-For large lists (300+): run API collection in a single script (no limit).
-For browser link collection: page through in sessions of 50-100 if needed.
+For large lists (300+): collect in-browser in batches of 50, polling between.
+For links: deterministic URL construction scales to any size with no extra requests.
 For the workbook: each batch is a separate sheet or file; document in the tester config.
 
 When adding a new batch for the same tester:

@@ -1,5 +1,32 @@
 # Changelog
 
+## [2026-06-04] - v2.1 In-Browser Collection (Cowork fix)
+
+### Context
+First real Cowork run (Susan Beyer kit, 150 matches, 0 failures) succeeded but the
+documented Step 2 did not run as written. browser_cookie3 cannot see the user's
+Chrome from the sandboxed Linux VM. Full debrief: docs/PIPELINE_DEBRIEF_Cowork_run.md.
+
+### Decisions
+- In-browser fetch (Claude in Chrome, GET matchSharedDna with credentials:"include")
+  is now the PRIMARY collection path. Works in both Cowork and local Claude Code.
+- fetch_shared_dna.py + browser_cookie3 demoted to a local-Claude-Code-only fallback.
+- Step 3 link collection: deterministic verified compare-URL construction is now the
+  default (no per-profile scraping). Per-profile deep-link pass is optional, priority
+  subset only. treeData/commonAncestors are POST-only/header-gated/SPA-cached -- noted.
+- javascript_tool guardrails baked into the skill: no top-level await (poll a window
+  flag instead), ~1KB output cap (read results in ~20-row chunks), browser and sandbox
+  are separate filesystems (return data as tool output, not a shared CSV).
+- Added an environment check at the top of the skill (Cowork vs local).
+
+### Built / Produced
+- CLAUDE.md v2.1: Step 2 and Step 3 rewritten per the above
+- Plugin v0.3.0: dna-match-extractor SKILL.md v2.1 with the hardened in-browser collector
+- docs/PIPELINE_DEBRIEF_Cowork_run.md (the Cowork run debrief, archived)
+
+### Next
+- Reinstall the rebuilt v0.3.0 plugin
+
 ## [2026-06-04] - v2.0 Kit-Agnostic Refactor
 
 ### Decisions

@@ -1,6 +1,6 @@
 ---
 Ancestry DNA Match Pipeline CLAUDE.md
-Version: 2.0
+Version: 2.1
 Last updated: 2026-06-04 UTC
 ---
 
@@ -66,20 +66,33 @@ To onboard a new kit: see "Adding a New Tester" below.
 - Read the CSV, extract match GUIDs from the URL column
 - Derive the tester GUID from the kit URL
 
-### Step 2: API Data Collection (Claude Code)
-- Call Ancestry's matchSharedDna API for every GUID
-  Endpoint: https://www.ancestry.com/discoveryui-matches/parents/list/api/matchSharedDna/{TESTER_GUID}/{MATCH_GUID}
-  Returns: totalSharedCentimorgans (unweighted), longestSharedSegment, numSharedSegments, sharedCentimorgans (weighted)
-- Uses browser_cookie3 to authenticate via Chrome session cookies
-- The tester GUID is supplied as a parameter -- never hardcoded
-- Runs in concurrent batches (default 50 at a time) with 150ms delay between requests
-- Handles errors gracefully, retries once on failure, logs any remaining failures
-- No hard limit on total matches -- process in batches of any size
+### Step 2: API Data Collection
 
-### Step 3: Browser Link Collection (Claude in Chrome)
-- For each match with a linked tree: capture the direct tree URL
-- For each match showing "Common Ancestor": capture the ThruLines/common ancestor URL
-- Runs after API collection, same session
+PRIMARY PATH (works in Cowork AND local Claude Code) -- in-browser fetch via Claude
+in Chrome. Navigate the tab to ancestry.com (logged in), then call the GET endpoint
+same-origin with credentials so the session cookie rides along; no cookie extraction.
+  Endpoint (GET): https://www.ancestry.com/discoveryui-matches/parents/list/api/matchSharedDna/{TESTER_GUID}/{MATCH_GUID}
+  Call shape: fetch(url, {credentials:"include"}).then(r => r.json())
+  Returns: totalSharedCentimorgans (unweighted), longestSharedSegment, numSharedSegments
+- Batch 50 at a time, 150ms between batches, retry once on failure
+- The tester GUID is supplied as a parameter -- never hardcoded
+- No hard limit on total matches
+
+FALLBACK (local Claude Code ONLY) -- fetch_shared_dna.py with browser_cookie3 reads
+Chrome cookies directly. This does NOT work in Cowork: the bash shell is a sandboxed
+Linux VM with no access to the user's Chrome. Use only when running as local Claude Code.
+
+### Step 3: Link Collection
+
+DEFAULT -- construct verified compare URLs deterministically from the GUIDs (no
+per-profile scraping; both patterns confirmed live on Ancestry):
+  Profile/compare:        https://www.ancestry.com/dna/matches/{TESTER_GUID}/compare/{MATCH_GUID}
+  Tree + ThruLines compare: https://www.ancestry.com/discoveryui-matches/compare/{TESTER_GUID}/with/{MATCH_GUID}
+
+OPTIONAL deep-links enhancement -- a per-profile browser pass, run only over the
+priority subset (matches passing longest >= 20 AND AScM >= 12), not all matches. The
+bulk treeData/commonAncestors endpoints are POST-only, header-gated, and SPA-cached,
+so replaying them is advanced and not required for a usable workbook.
 
 ### Step 4: Build Spreadsheet
 - Column order: Match Name | Longest Segment | AScM | Unweighted cM | Segments |
@@ -193,13 +206,14 @@ ancestry-dna-pipeline/
 ├── CLAUDE.md                    -- this file, generic project brain
 ├── CHANGELOG.md                 -- session log
 ├── README.md                    -- human overview
-├── fetch_shared_dna.py          -- parameterized API collection script
+├── fetch_shared_dna.py          -- parameterized API collection script (local fallback)
 ├── testers/
 │   ├── _TEMPLATE.md             -- blank per-tester config template
 │   └── adrienne-peckler.md      -- active tester config
 ├── docs/
 │   ├── column-schema.md         -- full column spec with rationale
-│   └── threshold-research.md    -- AScM/longest segment research notes
+│   ├── threshold-research.md    -- AScM/longest segment research notes
+│   └── PIPELINE_DEBRIEF_Cowork_run.md -- first Cowork run debrief (why Step 2 changed)
 └── dna-match-extractor-plugin/  -- Cowork plugin
     ├── .claude-plugin/
     │   └── plugin.json
@@ -217,7 +231,7 @@ ancestry-dna-pipeline/
 
 Working directory: wherever the tester's files are stored locally.
 Python dependencies: requests, browser-cookie3, openpyxl, pandas
-Cookie source: Chrome (browser_cookie3 default)
+Cookie source: Chrome (browser_cookie3 default) -- local fallback only; primary path is in-browser fetch
 API rate limiting: 150ms delay minimum between requests, concurrent batches of 50
 Tester GUID: always passed as a parameter to the script, never hardcoded
 Output naming: {Tester_LastName}_DNA_Matches_Batch{N}.xlsx
