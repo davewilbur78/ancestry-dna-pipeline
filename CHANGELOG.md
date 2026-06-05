@@ -1,5 +1,45 @@
 # Changelog
 
+## [2026-06-04] - v2.2 Jeannette Klein Batch 1
+
+### Context
+Second full pipeline run. New tester: Jeannette Klein, kit E68B82EF-C277-43AA-91DF-21532961EFC6.
+300 matches from Genealogy Assistant CSV export. Ran entirely in Cowork.
+
+### What Was Done
+- Parsed 300-match CSV, extracted all GUIDs (0 missing)
+- API collection via in-browser fetch (Claude in Chrome, async IIFE pattern):
+  6 batches of 50, Promise.all within each batch, 300/300 succeeded, 0 failures
+- Built Klein_DNA_Matches_Batch1.xlsx with full column schema, color tiers,
+  AScM formula, and Match Name hyperlinks
+- Created testers/jeannette-klein.md config
+- Switched CLAUDE.md Active Tester to Jeannette Klein (v2.2)
+
+### Tier Breakdown (Batch 1)
+  17 dark green (longest 50+ cM)
+  57 med green (longest 30-50 cM)
+  63 light green (longest 20-30 cM)
+  163 red (fail filter: longest < 20 OR AScM < 12)
+
+### Pattern Confirmed
+The async IIFE call shape for javascript_tool is confirmed working:
+  (async () => { const r = await fetch(url,{credentials:'include'}); const d=await r.json(); return ...; })()
+Top-level await is rejected; IIFE resolves the Promise correctly.
+50-match batches produce ~700 chars output -- well within the ~1KB cap.
+
+### Decisions
+- No new methodology decisions. Pipeline ran clean per v2.1 design.
+- Line definitions for Jeannette Klein TBD (user to supply surnames/quadrant mapping)
+- Tree/CA hyperlinks outstanding (optional browser pass when needed)
+
+### Next (Jeannette Klein)
+- User to supply line definitions (surnames for PP/PM/MP/MM)
+- Once groups are created in Ancestry, add group -> line mapping to tester config
+- Optional browser pass for tree URLs
+- Build Batch 2 when ready
+
+---
+
 ## [2026-06-04] - v2.1 In-Browser Collection (Cowork fix)
 
 ### Context
