@@ -1,6 +1,6 @@
 ---
 Ancestry DNA Match Pipeline CLAUDE.md
-Version: 2.1
+Version: 2.2
 Last updated: 2026-06-04 UTC
 ---
 
@@ -41,9 +41,9 @@ GPS standards and Ashkenazi-specific endogamy awareness.
 This project is kit-agnostic. The tester-specific configuration is loaded from a
 separate file so the same pipeline can serve any kit.
 
-ACTIVE TESTER: Adrienne Balsky Peckler
-CONFIG FILE: testers/adrienne-peckler.md
-CONFIG RAW URL: https://raw.githubusercontent.com/davewilbur78/ancestry-dna-pipeline/main/testers/adrienne-peckler.md
+ACTIVE TESTER: Jeannette Klein
+CONFIG FILE: testers/jeannette-klein.md
+CONFIG RAW URL: https://raw.githubusercontent.com/davewilbur78/ancestry-dna-pipeline/main/testers/jeannette-klein.md
 
 After reading this CLAUDE.md, load the config file named above and read it fully.
 It defines the active tester's kit ID, line anchors, surname-to-line mapping,
@@ -72,9 +72,10 @@ PRIMARY PATH (works in Cowork AND local Claude Code) -- in-browser fetch via Cla
 in Chrome. Navigate the tab to ancestry.com (logged in), then call the GET endpoint
 same-origin with credentials so the session cookie rides along; no cookie extraction.
   Endpoint (GET): https://www.ancestry.com/discoveryui-matches/parents/list/api/matchSharedDna/{TESTER_GUID}/{MATCH_GUID}
-  Call shape: fetch(url, {credentials:"include"}).then(r => r.json())
+  Call shape: (async () => { const r = await fetch(url, {credentials:"include"}); return await r.json(); })()
+  Note: wrap in async IIFE -- top-level await is rejected by the javascript_tool.
   Returns: totalSharedCentimorgans (unweighted), longestSharedSegment, numSharedSegments
-- Batch 50 at a time, 150ms between batches, retry once on failure
+- Batch 50 at a time using Promise.all; results returned as pipe-separated compact string
 - The tester GUID is supplied as a parameter -- never hardcoded
 - No hard limit on total matches
 
@@ -209,7 +210,8 @@ ancestry-dna-pipeline/
 ├── fetch_shared_dna.py          -- parameterized API collection script (local fallback)
 ├── testers/
 │   ├── _TEMPLATE.md             -- blank per-tester config template
-│   └── adrienne-peckler.md      -- active tester config
+│   ├── adrienne-peckler.md      -- Adrienne Balsky Peckler config
+│   └── jeannette-klein.md       -- Jeannette Klein config (active)
 ├── docs/
 │   ├── column-schema.md         -- full column spec with rationale
 │   ├── threshold-research.md    -- AScM/longest segment research notes
@@ -250,4 +252,4 @@ Before ending any productive session:
 
 Generic project-level next steps live here; per-tester next steps live in each
 tester's config file. For the current active tester, see the "What's Next" section
-of `testers/adrienne-peckler.md`.
+of `testers/jeannette-klein.md`.
