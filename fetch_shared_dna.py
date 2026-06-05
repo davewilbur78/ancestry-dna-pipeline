@@ -12,12 +12,12 @@ Assistant export; GUIDs are extracted from its URL column) or from --guids-file
 
 Examples:
   python fetch_shared_dna.py \\
-      --kit-url "https://www.ancestry.com/dna/matches/4FB3190E-37B7-401F-A8CF-431950413661/list" \\
+      --kit-url "https://www.ancestry.com/dna/matches/00000000-0000-0000-0000-000000000000/list" \\
       --input-csv "/path/to/genealogy_assistant_export.csv" \\
       --output "/path/to/dna_api_results.csv"
 
   python fetch_shared_dna.py \\
-      --tester-guid 4FB3190E-37B7-401F-A8CF-431950413661 \\
+      --tester-guid 00000000-0000-0000-0000-000000000000 \\
       --guids-file matches.txt \\
       --output results.csv
 """

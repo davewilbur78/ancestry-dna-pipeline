@@ -1,7 +1,7 @@
 ---
 Ancestry DNA Match Pipeline CLAUDE.md
-Version: 2.2
-Last updated: 2026-06-04 UTC
+Version: 2.3
+Last updated: 2026-06-05 UTC
 ---
 
 ## Operating Model
@@ -10,9 +10,11 @@ This file is the single source of truth for the Ancestry DNA Match Pipeline proj
 It lives at: https://raw.githubusercontent.com/davewilbur78/ancestry-dna-pipeline/main/CLAUDE.md
 
 Fetch and read this file fully at the start of every session.
-Then load the active tester config named under "Active Tester" below.
+Then load the tester config for the kit being worked (see "Active Tester" below);
+if no kit is named, ask which one to load rather than assuming a default.
 Never rely on memory from previous conversations.
-Confirm the CLAUDE.md version, date, AND the active tester name out loud when loaded.
+Confirm the CLAUDE.md version and date out loud when loaded, plus the active tester
+name once a kit is loaded (or note that no tester is loaded yet).
 
 ---
 
@@ -28,8 +30,8 @@ a working research tool.
 The pipeline and methodology in this file are generic and apply to any tester.
 Everything specific to one person -- kit ID, family lines, surname-to-quadrant
 mapping, Ancestry group names, research priorities, and batch state -- lives in a
-per-tester config file under `testers/`. To work a different kit, point the Active
-Tester block below at a different config file.
+per-tester config file under `testers/`. To work a kit, name it at the start of the
+session so its config loads; there is no default tester.
 
 Designed for Ashkenazi Jewish genetic genealogy research. All methodology follows
 GPS standards and Ashkenazi-specific endogamy awareness.
@@ -38,20 +40,22 @@ GPS standards and Ashkenazi-specific endogamy awareness.
 
 ## Active Tester
 
-This project is kit-agnostic. The tester-specific configuration is loaded from a
-separate file so the same pipeline can serve any kit.
+This project is kit-agnostic. No tester is loaded by default. Each tester's
+configuration lives in its own file under `testers/` so the same pipeline serves
+any kit.
 
-ACTIVE TESTER: Jeannette Klein
-CONFIG FILE: testers/jeannette-klein.md
-CONFIG RAW URL: https://raw.githubusercontent.com/davewilbur78/ancestry-dna-pipeline/main/testers/jeannette-klein.md
+ACTIVE TESTER: (none set)
 
-After reading this CLAUDE.md, load the config file named above and read it fully.
-It defines the active tester's kit ID, line anchors, surname-to-line mapping,
-Ancestry groups, research priority order, and current batch state.
+At the start of each session, after reading this file:
+- If the user names a kit, load its config from `testers/{firstname-lastname}.md`
+  and read it fully. It defines that tester's kit ID, line anchors, surname-to-line
+  mapping, Ancestry groups, research priority order, and current batch state.
+- If no config exists for that kit yet, create one from `testers/_TEMPLATE.md`
+  (see "Adding a New Tester").
+- If the user has not said which kit, ask which tester to load -- or list the
+  configs present in `testers/`. Do not assume a default.
 
-To switch kits: change the two lines above (ACTIVE TESTER and CONFIG FILE) to point
-at the new tester's config, then load it.
-
+Existing tester configs in `testers/` are reusable; selecting one is just naming it.
 To onboard a new kit: see "Adding a New Tester" below.
 
 ---
@@ -73,9 +77,11 @@ in Chrome. Navigate the tab to ancestry.com (logged in), then call the GET endpo
 same-origin with credentials so the session cookie rides along; no cookie extraction.
   Endpoint (GET): https://www.ancestry.com/discoveryui-matches/parents/list/api/matchSharedDna/{TESTER_GUID}/{MATCH_GUID}
   Call shape: (async () => { const r = await fetch(url, {credentials:"include"}); return await r.json(); })()
-  Note: wrap in async IIFE -- top-level await is rejected by the javascript_tool.
+  Note: wrap in an async IIFE -- the javascript_tool rejects top-level await. Run 50
+  per batch with Promise.all; read results back compactly (pipe-separated, or ~20-row
+  JSON chunks) to stay under the ~1KB output cap. Confirmed at 300-match scale.
   Returns: totalSharedCentimorgans (unweighted), longestSharedSegment, numSharedSegments
-- Batch 50 at a time using Promise.all; results returned as pipe-separated compact string
+- Batch 50 at a time, 150ms between batches, retry once on failure
 - The tester GUID is supplied as a parameter -- never hardcoded
 - No hard limit on total matches
 
@@ -190,13 +196,13 @@ batch files and note them in the tester config. Do not overwrite prior batches.
 1. Copy `testers/_TEMPLATE.md` to `testers/{firstname-lastname}.md`.
 2. Fill in the new tester's kit ID, line anchors, surname-to-line mapping, known
    great-grandparent couples, Ancestry group names, and research priorities.
-3. Update the Active Tester block in this CLAUDE.md to point at the new config file
-   (both ACTIVE TESTER and CONFIG FILE / CONFIG RAW URL).
+3. Name the kit at the start of the session so its config loads. (There is no
+   default tester; CLAUDE.md's Active Tester is "(none set)".)
 4. Provide the new kit's Genealogy Assistant CSV export and Ancestry kit URL.
 5. Run the pipeline. The tester GUID is taken from the kit URL; nothing is hardcoded.
 
-Prior testers' config files stay in `testers/` and remain reusable. Switching back
-is just a matter of repointing the Active Tester block.
+Prior testers' config files stay in `testers/` and remain reusable. Switching kits
+is just a matter of naming a different one.
 
 ---
 
@@ -207,15 +213,16 @@ ancestry-dna-pipeline/
 ├── CLAUDE.md                    -- this file, generic project brain
 ├── CHANGELOG.md                 -- session log
 ├── README.md                    -- human overview
-├── fetch_shared_dna.py          -- parameterized API collection script (local fallback)
+├── fetch_shared_dna.py          -- parameterized API collection script
 ├── testers/
 │   ├── _TEMPLATE.md             -- blank per-tester config template
-│   ├── adrienne-peckler.md      -- Adrienne Balsky Peckler config
-│   └── jeannette-klein.md       -- Jeannette Klein config (active)
+│   ├── adrienne-peckler.md      -- tester config (Adrienne Balsky Peckler)
+│   ├── jeannette-klein.md       -- tester config (Jeannette Klein)
+│   └── cynthia-wilbur.md        -- tester config (Cynthia (Klein) Wilbur)
 ├── docs/
 │   ├── column-schema.md         -- full column spec with rationale
 │   ├── threshold-research.md    -- AScM/longest segment research notes
-│   └── PIPELINE_DEBRIEF_Cowork_run.md -- first Cowork run debrief (why Step 2 changed)
+│   └── PIPELINE_DEBRIEF_Cowork_run.md -- first Cowork run debrief
 └── dna-match-extractor-plugin/  -- Cowork plugin
     ├── .claude-plugin/
     │   └── plugin.json
@@ -236,7 +243,11 @@ Python dependencies: requests, browser-cookie3, openpyxl, pandas
 Cookie source: Chrome (browser_cookie3 default) -- local fallback only; primary path is in-browser fetch
 API rate limiting: 150ms delay minimum between requests, concurrent batches of 50
 Tester GUID: always passed as a parameter to the script, never hardcoded
-Output naming: {Tester_LastName}_DNA_Matches_Batch{N}.xlsx
+Output naming: {FirstName}_{LastName}_DNA_Matches_Batch{N}.xlsx
+  REQUIRED: always include BOTH first and last name. Surname-only filenames are
+  forbidden -- a family shares one surname, so "Wilbur_..." is ambiguous across
+  multiple testers. Example: Cynthia_Wilbur_DNA_Matches_Batch1.xlsx. Apply the same
+  FirstName_LastName rule to any companion files (e.g. _dna_api_results_BatchN.csv).
 
 ---
 
@@ -251,5 +262,4 @@ Before ending any productive session:
 ## What To Work On Next Session
 
 Generic project-level next steps live here; per-tester next steps live in each
-tester's config file. For the current active tester, see the "What's Next" section
-of `testers/jeannette-klein.md`.
+tester's config file under `testers/`, in that tester's "What's Next" section.

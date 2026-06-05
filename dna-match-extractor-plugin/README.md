@@ -29,6 +29,8 @@ Auto-loads when working with Ashkenazi tester data.
 
 ## Version
 
+0.3.1 -- no default tester (fully kit-agnostic); FirstName_LastName output naming;
+skill wording aligned to "no default." 2026-06-05
 0.3.0 -- in-browser fetch is now the primary collection path (works in Cowork and
 local Claude Code); browser_cookie3 demoted to a local-only fallback. 2026-06-04
 0.2.0 -- kit-agnostic refactor, 2026-06-04

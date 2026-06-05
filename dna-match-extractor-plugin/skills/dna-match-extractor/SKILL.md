@@ -10,7 +10,7 @@ description: >
   builds verified compare links, and produces the enriched Excel workbook.
 license: CC-BY-NC-SA-4.0
 metadata:
-  version: "2.1"
+  version: "2.2"
   author: User + Claude collaboration
   base_skills: gra v8.5c, ashkenazi-genetic-genealogist
 ---
@@ -255,7 +255,12 @@ Never force-assign a match that maps to multiple lines -- mark it Multiple.
 - Alternating light gray (#F5F5F5) on non-colored rows
 
 ### Output Naming
-`{Tester_LastName}_DNA_Matches_Batch{N}.xlsx`
+`{FirstName}_{LastName}_DNA_Matches_Batch{N}.xlsx`
+
+REQUIRED: include BOTH first and last name. Never name a file by surname alone --
+testers share surnames with their relatives, so a surname-only name is ambiguous.
+Example: `Cynthia_Wilbur_DNA_Matches_Batch1.xlsx`. Same rule for companion files
+such as `{FirstName}_{LastName}_dna_api_results_Batch{N}.csv`.
 
 Run recalc.py to verify zero formula errors before delivering.
 
@@ -288,7 +293,7 @@ When adding a new batch for the same tester:
 - Do not overwrite prior batch files
 
 When switching to a different tester:
-- Repoint the Active Tester block in CLAUDE.md, then load that tester's config
+- Load that tester's config from `testers/` (just name the kit; there is no default)
 - The tester GUID comes from that kit's URL; nothing in this skill is tester-specific
 
 ---
