@@ -1,7 +1,7 @@
 {
   "name": "dna-match-extractor",
-  "version": "0.3.1",
-  "description": "Kit-agnostic pipeline that enriches AncestryDNA Genealogy Assistant CSV exports with API data, browser-collected hyperlinks, and a formatted Excel workbook. Tester-specific config is loaded from CLAUDE.md. Designed for Ashkenazi Jewish genetic genealogy research.",
+  "version": "0.3.2",
+  "description": "Standard, config-free pipeline that enriches AncestryDNA Genealogy Assistant CSV exports with API data, verified compare links, and a formatted Excel workbook. Same setup for every kit. Designed for Ashkenazi Jewish genetic genealogy research.",
   "author": {
     "name": "User + Claude collaboration"
   },

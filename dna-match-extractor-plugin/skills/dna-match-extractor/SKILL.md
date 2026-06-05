@@ -10,7 +10,7 @@ description: >
   builds verified compare links, and produces the enriched Excel workbook.
 license: CC-BY-NC-SA-4.0
 metadata:
-  version: "2.2"
+  version: "2.3"
   author: User + Claude collaboration
   base_skills: gra v8.5c, ashkenazi-genetic-genealogist
 ---
@@ -21,10 +21,11 @@ Full enrichment pipeline for AncestryDNA Genealogy Assistant CSV exports.
 Takes a CSV and kit URL. Produces a formatted Excel workbook with all missing
 fields populated and color-coded by research priority.
 
-This skill is kit-agnostic. All tester-specific values -- kit ID, family surnames,
-the surname-to-line (quadrant) mapping, Ancestry group names, and research
-priorities -- come from the active tester config loaded via CLAUDE.md
-(`testers/{tester}.md`). Never hardcode a tester or a surname here.
+This skill is standard and uniform: the same setup for every kit. To build a
+workbook you need only a Genealogy Assistant CSV and the kit URL -- no per-tester
+config. The only kit-specific element is the Line Assignment column, which is left
+blank unless the user supplies a surname-to-branch mapping (inline, or from an
+optional notes file under `testers/`). Never hardcode a tester or a surname here.
 
 **Never fabricate cM values, segment data, or URLs. If a field cannot be
 collected, leave it blank and note it. Never invent data.**
@@ -55,12 +56,13 @@ Before starting, confirm you have:
 2. **Ancestry kit URL** -- the URL of the tester's DNA match list page, e.g.:
    `https://www.ancestry.com/dna/matches/{TESTER_GUID}/list`
    The tester GUID is extracted from this URL automatically.
-3. **Active tester config** -- confirm CLAUDE.md is loaded and the active tester
-   config under `testers/` has been read. It supplies the line/surname mapping
-   and group names used in Step 4.
-4. **A logged-in Ancestry browser tab** (for the in-browser collection path).
+3. **A logged-in Ancestry browser tab** (for the in-browser collection path).
 
 If any of these is missing, ask for it before proceeding.
+
+OPTIONAL: a surname-to-branch mapping for this kit (stated inline by the user, or
+read from an optional notes file under `testers/`). Used only to pre-fill the Line
+Assignment column in Step 4. Not required to build the workbook.
 
 ---
 
@@ -207,7 +209,7 @@ Merge all data sources. Build the workbook using openpyxl.
 | G   | Family Tree     | CSV + compare URL  | Hyperlink  |
 | H   | Tree Size       | CSV               | Integer    |
 | I   | Common Ancestor | CSV + compare URL  | Hyperlink  |
-| J   | Line Assignment | Derived + user    | Color fill |
+| J   | Line Assignment | Optional mapping  | Color fill |
 | K   | Groups          | CSV               | Text       |
 | L   | Notes           | CSV               | Text       |
 | M   | Match Side      | CSV               | Text       |
@@ -221,7 +223,7 @@ Merge all data sources. Build the workbook using openpyxl.
 ### AScM Formula
 Use Excel formula: `=IFERROR(D{row}/E{row},"")` -- never hardcode calculated values.
 
-### Color Tiers (row-level, based on Longest Segment) -- generic for any tester
+### Color Tiers (row-level, based on Longest Segment) -- the same for every kit
 
 | Tier       | Condition                          | Fill    | Font             |
 |------------|------------------------------------|---------|------------------|
@@ -230,11 +232,12 @@ Use Excel formula: `=IFERROR(D{row}/E{row},"")` -- never hardcode calculated val
 | Med green  | Longest 30-50                      | A9D18E  | 000000 (black)   |
 | Dark green | Longest 50+                        | 70AD47  | 000000 bold      |
 
-### Line Assignment Colors (column J only) -- quadrant colors are fixed; surnames are per-tester
+### Line Assignment Colors (column J only) -- optional; blank by default
 
-Colors are a fixed project convention (cool = paternal, warm = maternal). The
-surname behind each quadrant, and the Groups-to-line mapping used to pre-fill this
-column, come from the active tester config under `testers/`.
+Line Assignment is left BLANK by default -- the standard workbook needs no mapping.
+Pre-fill it only when the user supplies a surname-to-branch mapping (inline, or from
+an optional notes file under `testers/`). When filled, color by quadrant using this
+fixed convention (cool = paternal, warm = maternal):
 
 | Quadrant                 | Convention   | Fill    |
 |--------------------------|--------------|---------|
@@ -244,9 +247,8 @@ column, come from the active tester config under `testers/`.
 | MM (maternal-maternal)   | coral        | FCE4D6  |
 | Multiple                 | purple       | E2CEEF  |
 
-Pre-fill Line Assignment from the Groups column using the active tester's
-group-to-line mapping. Where no rule matches, leave blank for the user to fill in.
-Never force-assign a match that maps to multiple lines -- mark it Multiple.
+With a mapping supplied, pre-fill from the Groups column; where no rule matches, leave
+blank. Never force-assign a match that maps to multiple lines -- mark it Multiple.
 
 ### Header Style
 - Dark teal header row (#2F4858), white bold Arial 10
@@ -285,16 +287,17 @@ This pipeline is open-ended. Any number of matches can be processed.
 
 For large lists (300+): collect in-browser in batches of 50, polling between.
 For links: deterministic URL construction scales to any size with no extra requests.
-For the workbook: each batch is a separate sheet or file; document in the tester config.
+For the workbook: each batch is a separate sheet or file.
 
-When adding a new batch for the same tester:
-- Load CLAUDE.md and the active tester config from GitHub first
-- Note the batch number (increment from the last recorded in the tester config)
+When adding a new batch for the same kit:
+- Load CLAUDE.md from GitHub first
+- Increment the batch number (if you keep optional notes for this kit, the last batch
+  number is recorded there)
 - Do not overwrite prior batch files
 
-When switching to a different tester:
-- Load that tester's config from `testers/` (just name the kit; there is no default)
-- The tester GUID comes from that kit's URL; nothing in this skill is tester-specific
+Every kit runs the same standard, config-free way. The tester GUID always comes from
+that kit's URL; nothing in this skill is tester-specific. Optional per-kit notes under
+`testers/` only ever pre-fill the Line Assignment column.
 
 ---
 

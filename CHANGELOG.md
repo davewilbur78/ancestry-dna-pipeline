@@ -1,5 +1,56 @@
 # Changelog
 
+## [2026-06-05] - v2.4 Standard config-free flow
+
+### Decision
+- The pipeline is now standard and uniform for every kit: present a Genealogy Assistant
+  CSV + kit URL, get the formatted workbook. No per-tester config required, no "active
+  tester" to set. Removed the config-loading step from the operating model and the skill.
+- The only kit-specific element, the Line Assignment column, is left BLANK by default and
+  pre-filled only when the user supplies a surname-to-branch mapping (inline or from notes).
+- testers/ files are now explicitly OPTIONAL research notes (line mapping, groups, batch
+  history). They never gate workbook creation. Kept: adrienne-peckler, jeannette-klein,
+  cynthia-wilbur.
+
+### Built / Produced
+- CLAUDE.md v2.4: added "Standard Flow"; "Active Tester" replaced by "Tester Configs
+  (optional)"; Step 4 Line Assignment now blank-by-default
+- Plugin v0.3.2: dna-match-extractor SKILL.md v2.3 (config-free inputs; optional mapping)
+
+### Next
+- Reinstall the v0.3.2 plugin
+
+## [2026-06-05] - v2.3 Reconcile parallel threads + no default tester
+
+### Context
+Two threads diverged after v2.1 and both reached "v2.2": one onboarded Jeannette
+Klein (300 matches) and pushed to GitHub; another onboarded Cynthia (Klein) Wilbur
+(300 matches) locally and adopted the FirstName_LastName naming rule. This entry
+merges both lines and makes the project fully kit-agnostic. Nothing was dropped.
+
+### Decisions
+- No tester is loaded by default. CLAUDE.md "Active Tester" is now "(none set)". Each
+  session loads a kit by name from testers/, creates one from _TEMPLATE.md, or asks
+  which to load. Adrienne is no longer the default; she remains a selectable config.
+- Kept all three tester configs: adrienne-peckler.md, jeannette-klein.md (was repo-only),
+  cynthia-wilbur.md (was local-only). All now in the repo.
+- Adopted the FirstName_LastName output-naming rule project-wide (CLAUDE.md + skill).
+- Folded the Jeannette thread's field-confirmed Step 2 refinement into CLAUDE.md: the
+  async-IIFE call shape (top-level await is rejected), Promise.all per 50-match batch,
+  compact read-back to stay under the ~1KB output cap. Confirmed at 300-match scale.
+- Genericized the last tester-specific bits: fetch_shared_dna.py uses a placeholder
+  GUID in its examples; README has no named tester and the accurate in-browser method.
+
+### Built / Produced
+- CLAUDE.md v2.3 (no default tester, IIFE Step 2, all three configs listed)
+- Plugin v0.3.1: dna-match-extractor SKILL.md v2.2 (FirstName_LastName naming; "no
+  default" wording)
+- README.md agnostic + accurate; testers/cynthia-wilbur.md added to repo
+
+### Next
+- Reinstall the v0.3.1 plugin (installed copy is still pre-fix)
+- Per-tester next steps live in each tester's config under testers/
+
 ## [2026-06-04] - v2.2 Jeannette Klein Batch 1
 
 ### Context
@@ -38,7 +89,54 @@ Top-level await is rejected; IIFE resolves the Promise correctly.
 - Optional browser pass for tree URLs
 - Build Batch 2 when ready
 
----
+## [2026-06-04] - Naming convention: FirstName_LastName required
+
+### Decision
+- Output filenames MUST include both first and last name:
+  {FirstName}_{LastName}_DNA_Matches_Batch{N}.xlsx. Surname-only names are forbidden --
+  a tester shares a surname with relatives, so "Wilbur_..." or "Beyer_..." is ambiguous.
+  Updated in CLAUDE.md (Conventions) and the dna-match-extractor SKILL.md (Output Naming).
+
+### Renamed (existing files brought into compliance)
+- Wilbur_DNA_Matches_Batch1.xlsx        -> Cynthia_Wilbur_DNA_Matches_Batch1.xlsx
+- Klein_DNA_Matches_Batch1.xlsx         -> Cynthia_Wilbur_DNA_Matches_Batch1_SUPERSEDED.xlsx
+    (same kit as the Wilbur file -- older duplicate built from the Klein maiden-name
+     export; kept for reference, not the working file)
+- Beyer_DNA_Matches_Batch1.xlsx         -> Susan_Beyer_DNA_Matches_Batch1.xlsx
+- Beyer_dna_api_results_Batch1.csv      -> Susan_Beyer_dna_api_results_Batch1.csv
+- Adrienne_Peckler_DNA_Matches_Batch1.xlsx already compliant (unchanged)
+
+## [2026-06-04] - New Tester: Cynthia (Klein) Wilbur Batch 1 (300 matches)
+
+### Context
+First kit onboarded after the v2.1 in-browser fix. Full run end to end in Cowork
+using the in-browser collection path (no browser_cookie3). 300 matches, 0 failures.
+
+### Decisions
+- Onboarded Cynthia (Klein) Wilbur as a new tester: testers/cynthia-wilbur.md.
+- Confirmed the v2.1 in-browser fetch path works at 300-match scale: fire-and-forget
+  collection into a window var + poll (sidesteps any tool timeout); results read back
+  in ~50-row numeric chunks (sidesteps the ~1KB output cap).
+- Step 3 links: treeData (bulk POST) carries only public/private/size flags -- no
+  treeId or URL; commonAncestors (bulk POST) returned empty. So bulk endpoints cannot
+  supply hyperlinks. Resolution used:
+    * Tree links = deterministic compare /trees tab URL (profileURL + "/trees"),
+      verified against a real rendered anchor. Applied to all 237 tree matches.
+    * ThruLines / Common Ancestor links = captured per-match from compare pages for the
+      15 common-ancestor matches (ThruLines URL is per-ancestor, not constructible).
+- Endogamy caveat recorded: AScM >= 12 filter is Ashkenazi-calibrated; Cynthia's
+  endogamy status is unconfirmed, so the 253 red rows may be over-flagged.
+
+### Built / Produced
+- Ancestry DNA Data extractor/Cynthia_Wilbur_DNA_Matches_Batch1.xlsx
+  (300 matches; 300 name links, 237 tree links, 15 ThruLines links; AScM live formula;
+   tiers 13 dark / 17 med / 17 light / 253 red; recalc verified 0 formula errors)
+- testers/cynthia-wilbur.md (new tester config + batch state)
+
+### Next
+- Confirm endogamy status; capture fan chart to fill lines/surnames
+- Create Ancestry groups, then auto-fill Line Assignment
+- Optional deep-link pass beyond the priority 50; build Batch 2
 
 ## [2026-06-04] - v2.1 In-Browser Collection (Cowork fix)
 
@@ -117,16 +215,8 @@ Chrome from the sandboxed Linux VM. Full debrief: docs/PIPELINE_DEBRIEF_Cowork_r
 - Existing Ancestry groups: Balsky (PP), SINGER/SPRINGER (PM)
 - Mendick (MP) and Weinberger/Danko (MM) groups not yet created in Ancestry
 
-### Workflow Learned
-- Genealogy Assistant CSV + Claude Code API script = fastest extraction path
-- Browser character limit prevents reading large JS results back to Claude
-- Solution: Claude Code writes results to CSV, user uploads to Claude chat
-- For future batches: one Claude Code prompt collects all API data with no size limit
-- Browser pass needed separately for tree URLs and common ancestor URLs
-
 ### Next
 - Browser pass: collect tree URLs and CA URLs for Batch 1
 - Build Batch 2 (next 150 or more matches) using the Cowork plugin
 - Confirm anchor kit (Marvin Balsky or Harriette Mendick)
 - Create Mendick and Weinberger/Danko groups in Ancestry
-- Push this repo to GitHub and set up bootloader in Claude project
