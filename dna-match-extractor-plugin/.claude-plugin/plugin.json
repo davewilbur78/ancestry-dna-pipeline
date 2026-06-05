@@ -1,0 +1,9 @@
+{
+  "name": "dna-match-extractor",
+  "version": "0.1.0",
+  "description": "Enriches AncestryDNA Genealogy Assistant CSV exports with API data, browser-collected hyperlinks, and a formatted Excel workbook. Designed for Ashkenazi Jewish genetic genealogy research.",
+  "author": {
+    "name": "User + Claude collaboration"
+  },
+  "keywords": ["genealogy", "dna", "ancestry", "ashkenazi", "genetic-genealogy"]
+}
