@@ -1,5 +1,27 @@
 # Changelog
 
+## [2026-06-04] - v2.0 Kit-Agnostic Refactor
+
+### Decisions
+- Split the project into generic pipeline/methodology (CLAUDE.md) vs per-tester config (testers/)
+- CLAUDE.md bumped to v2.0; added an Active Tester pointer and an "Adding a New Tester" flow
+- Quadrant colors (PP green, PM blue, MP yellow, MM coral, Multiple purple) are a fixed project
+  convention; surname-to-quadrant mapping now lives in the tester config, not in CLAUDE.md or skills
+- Tester GUID is always a parameter -- never hardcoded anywhere
+
+### Built / Produced
+- testers/adrienne-peckler.md (archived Adrienne's full config + batch state + research priority)
+- testers/_TEMPLATE.md (blank per-tester template for new kits)
+- fetch_shared_dna.py parameterized: takes --kit-url/--tester-guid and --input-csv/--guids-file;
+  extracts match GUIDs from the CSV URL column; retry-once and >10% failure warning built in
+- Plugin v0.2.0: both SKILL.md files de-hardcoded (no more Adrienne surnames); they now read
+  line names, colors, group mapping, and priorities from the active tester config
+- README updated for multi-kit design
+
+### Next
+- Browser pass for Adrienne Batch 1 (tree + common ancestor URLs)
+- Reinstall the rebuilt v0.2.0 plugin
+
 ## [2026-06-04] - Initial Pipeline Build: Adrienne Peckler Batch 1
 
 ### Decisions

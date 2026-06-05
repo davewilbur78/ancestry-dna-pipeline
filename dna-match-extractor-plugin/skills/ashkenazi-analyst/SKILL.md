@@ -5,8 +5,8 @@ description: >
   methodology context. Trigger when user asks about: interpreting DNA matches
   for Ashkenazi testers, line assignment, AScM thresholds, TIMBER algorithm,
   what to do with a match, how to prioritize matches, or any analytical question
-  about Adrienne's or another Ashkenazi tester's DNA results. Also loads
-  automatically at session start when CLAUDE.md indicates an Ashkenazi tester.
+  about the active tester's DNA results. Also loads automatically at session
+  start when CLAUDE.md indicates an Ashkenazi tester.
   Based on GRA v8.5c and ashkenazi-genetic-genealogist DRAFT v.99.
 ---
 
@@ -14,6 +14,11 @@ description: >
 
 Full endogamy-aware analysis context for Ashkenazi Jewish genetic genealogy.
 Integrates GPS methodology with Ashkenazi-specific expertise.
+
+This skill is kit-agnostic. Tester-specific details -- the surnames behind each
+quadrant, the Groups-to-line mapping, and the per-tester research priorities --
+come from the active tester config loaded via CLAUDE.md (`testers/{tester}.md`).
+Read that config before doing any line assignment or prioritization.
 
 Read the full skill at: /mnt/skills/user/ashkenazi-genetic-genealogist/SKILL.md
 
@@ -29,27 +34,29 @@ Key reminders loaded at every session:
 - "Triangulation" means three people sharing an identical segment, nothing else
 - Pile-up regions exist -- flag chromosomal segments known for elevated Ashkenazi background
 
-## Current Research Priority Order for Adrienne Peckler
+## Research Priority Order (generic default)
+
+Use the active tester config's priority order if it defines one. Otherwise default to:
 
 1. Dark green rows (longest segment 50+ cM) -- highest priority
 2. Medium green rows (longest segment 30-50 cM)
-3. Known line members (Groups: Balsky, SINGER/SPRINGER)
+3. Known line members (matches already tagged to a family group)
 4. Matches with Common Ancestor predicted by Ancestry
 5. Light green rows (longest segment 20-30 cM)
 6. Red rows -- set aside unless specific reason to investigate
 
 ## Line Assignment Logic
 
-Pre-fill from Groups column where possible:
-- "Balsky" in Groups → PP - Balsky
-- "SINGER" or "SPRINGER" in Groups → PM - Singer/Springer
-- "MENDICK" in Groups → MP - Mendick
-- "WEINBERGER" or "DANKO" in Groups → MM - Weinberger/Danko
-- Multiple group tags → flag as Multiple
-- Otherwise → blank (unassigned)
+Pre-fill the Line Assignment from the Groups column using the active tester's
+group-to-line mapping (defined in that tester's config). General rules that apply
+to every tester:
 
-Never force-assign a match that appears in multiple line-anchor files.
-Hold as Multiple and investigate separately.
+- A group tag that maps to one family line -> that quadrant (PP / PM / MP / MM)
+- Multiple mapped tags on one match -> flag as Multiple
+- No mapped tag -> blank (unassigned)
+
+Never force-assign a match that appears under multiple line anchors. Hold as
+Multiple and investigate separately.
 
 ## Threshold Research Basis
 

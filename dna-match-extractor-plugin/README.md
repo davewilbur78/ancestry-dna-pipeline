@@ -2,6 +2,10 @@
 
 Cowork plugin for enriching AncestryDNA Genealogy Assistant CSV exports.
 
+Kit-agnostic: the pipeline and methodology are generic, and all tester-specific
+detail (kit ID, family surnames, line mapping, group names, research priorities)
+is loaded from CLAUDE.md and the active tester config under `testers/`.
+
 ## Skills
 
 ### dna-match-extractor
@@ -25,4 +29,4 @@ Auto-loads when working with Ashkenazi tester data.
 
 ## Version
 
-0.1.0 -- initial build, 2026-06-04
+0.2.0 -- kit-agnostic refactor, 2026-06-04

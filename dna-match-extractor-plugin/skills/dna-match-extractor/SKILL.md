@@ -10,7 +10,7 @@ description: >
   and common ancestor links via browser, and builds the enriched Excel workbook.
 license: CC-BY-NC-SA-4.0
 metadata:
-  version: "1.0"
+  version: "2.0"
   author: User + Claude collaboration
   base_skills: gra v8.5c, ashkenazi-genetic-genealogist
 ---
@@ -20,6 +20,11 @@ metadata:
 Full enrichment pipeline for AncestryDNA Genealogy Assistant CSV exports.
 Takes a CSV and kit URL. Produces a formatted Excel workbook with all missing
 fields populated and color-coded by research priority.
+
+This skill is kit-agnostic. All tester-specific values -- kit ID, family surnames,
+the surname-to-line (quadrant) mapping, Ancestry group names, and research
+priorities -- come from the active tester config loaded via CLAUDE.md
+(`testers/{tester}.md`). Never hardcode a tester or a surname here.
 
 **Never fabricate cM values, segment data, or URLs. If a field cannot be
 collected, leave it blank and note it. Never invent data.**
@@ -34,8 +39,11 @@ Before starting, confirm you have:
 2. **Ancestry kit URL** -- the URL of the tester's DNA match list page, e.g.:
    `https://www.ancestry.com/dna/matches/{TESTER_GUID}/list`
    The tester GUID is extracted from this URL automatically.
+3. **Active tester config** -- confirm CLAUDE.md is loaded and the active tester
+   config under `testers/` has been read. It supplies the line/surname mapping
+   and group names used in Step 4.
 
-If either is missing, ask for it before proceeding.
+If any of these is missing, ask for it before proceeding.
 
 ---
 
@@ -63,23 +71,21 @@ Report: N matches loaded, M with trees, K with common ancestors.
 
 ## Step 2: API Data Collection (Claude Code)
 
-Write and run a Python script via Claude Code.
+Use the repo script `fetch_shared_dna.py`, which takes the tester GUID as a
+parameter (never hardcoded). Pass `--kit-url` (or `--tester-guid`) and either
+`--input-csv` (the Genealogy Assistant export) or `--guids-file`.
 
-**Script requirements:**
-- Use `browser_cookie3` to get Chrome cookies for `ancestry.com`
-- Call this endpoint for every match GUID:
+**Script behavior:**
+- Uses `browser_cookie3` to get Chrome cookies for `ancestry.com`
+- Calls this endpoint for every match GUID:
   `https://www.ancestry.com/discoveryui-matches/parents/list/api/matchSharedDna/{TESTER_GUID}/{MATCH_GUID}`
-- Response fields to capture:
-  - `totalSharedCentimorgans` → Unweighted cM
-  - `longestSharedSegment` → Longest Segment
-  - `numSharedSegments` → Segments
-- Process in concurrent batches of 50 using asyncio or threading
-- 150ms delay between batches (not between individual requests within a batch)
-- Retry failed requests once after 500ms
-- Log progress: print after every 50 matches
-- Save results to `dna_api_results.csv` with columns: guid, unweighted_cm, longest_segment, segments
-- Print final summary: N succeeded, M failed (list failed GUIDs)
-- Save to the same directory as the input CSV
+- Captures:
+  - `totalSharedCentimorgans` -> Unweighted cM
+  - `longestSharedSegment` -> Longest Segment
+  - `numSharedSegments` -> Segments
+- 150ms delay between requests; retries each failed request once
+- Saves results to `dna_api_results.csv` with columns: guid, unweighted_cm, longest_segment, segments
+- Prints a final summary: N succeeded, M failed (lists failed GUIDs)
 
 **Error handling:**
 - If browser_cookie3 fails: instruct user to ensure Chrome is open and logged into Ancestry
@@ -143,7 +149,7 @@ Merge all data sources. Build the workbook using openpyxl.
 ### AScM Formula
 Use Excel formula: `=IFERROR(D{row}/E{row},"")` -- never hardcode calculated values.
 
-### Color Tiers (row-level, based on Longest Segment)
+### Color Tiers (row-level, based on Longest Segment) -- generic for any tester
 
 | Tier       | Condition                          | Fill    | Font             |
 |------------|------------------------------------|---------|------------------|
@@ -152,18 +158,23 @@ Use Excel formula: `=IFERROR(D{row}/E{row},"")` -- never hardcode calculated val
 | Med green  | Longest 30-50                      | A9D18E  | 000000 (black)   |
 | Dark green | Longest 50+                        | 70AD47  | 000000 bold      |
 
-### Line Assignment Colors (column J only)
+### Line Assignment Colors (column J only) -- quadrant colors are fixed; surnames are per-tester
 
-| Line                    | Fill    |
-|-------------------------|---------|
-| PP - Balsky             | E2EFDA  |
-| PM - Singer/Springer    | BDD7EE  |
-| MP - Mendick            | FFEB9C  |
-| MM - Weinberger/Danko   | FCE4D6  |
-| Multiple                | E2CEEF  |
+Colors are a fixed project convention (cool = paternal, warm = maternal). The
+surname behind each quadrant, and the Groups-to-line mapping used to pre-fill this
+column, come from the active tester config under `testers/`.
 
-Line Assignment is pre-filled from Groups column where known.
-User fills in remaining assignments as research progresses.
+| Quadrant                 | Convention   | Fill    |
+|--------------------------|--------------|---------|
+| PP (paternal-paternal)   | green        | E2EFDA  |
+| PM (paternal-maternal)   | blue         | BDD7EE  |
+| MP (maternal-paternal)   | yellow/gold  | FFEB9C  |
+| MM (maternal-maternal)   | coral        | FCE4D6  |
+| Multiple                 | purple       | E2CEEF  |
+
+Pre-fill Line Assignment from the Groups column using the active tester's
+group-to-line mapping. Where no rule matches, leave blank for the user to fill in.
+Never force-assign a match that maps to multiple lines -- mark it Multiple.
 
 ### Header Style
 - Dark teal header row (#2F4858), white bold Arial 10
@@ -197,12 +208,16 @@ This pipeline is open-ended. Any number of matches can be processed.
 
 For large lists (300+): run API collection in a single script (no limit).
 For browser link collection: page through in sessions of 50-100 if needed.
-For the workbook: each batch is a separate sheet or file; document in CLAUDE.md.
+For the workbook: each batch is a separate sheet or file; document in the tester config.
 
 When adding a new batch for the same tester:
-- Load CLAUDE.md from GitHub first
-- Note the batch number (increment from last)
+- Load CLAUDE.md and the active tester config from GitHub first
+- Note the batch number (increment from the last recorded in the tester config)
 - Do not overwrite prior batch files
+
+When switching to a different tester:
+- Repoint the Active Tester block in CLAUDE.md, then load that tester's config
+- The tester GUID comes from that kit's URL; nothing in this skill is tester-specific
 
 ---
 

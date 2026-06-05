@@ -1,8 +1,8 @@
 # Ancestry DNA Match Pipeline
 
-A repeatable automated pipeline for enriching AncestryDNA match exports with
-data not included in Genealogy Assistant CSV downloads. Designed for Ashkenazi
-Jewish genetic genealogy research following GPS methodology.
+A repeatable, kit-agnostic automated pipeline for enriching AncestryDNA match
+exports with data not included in Genealogy Assistant CSV downloads. Designed for
+Ashkenazi Jewish genetic genealogy research following GPS methodology.
 
 ## What It Does
 
@@ -11,43 +11,56 @@ collects missing DNA fields (unweighted cM, longest segment, segment count) via
 the Ancestry API, collects tree and common ancestor hyperlinks via browser
 automation, and produces a formatted Excel workbook optimized as a daily research tool.
 
-Works for any number of matches. Processes in batches with no hard limit.
+Works for any number of matches and any tester. Processes in batches with no hard limit.
+
+## Kit-Agnostic Design
+
+The pipeline and methodology are generic and live in `CLAUDE.md`. Everything
+specific to one person -- kit ID, family lines, surname-to-quadrant mapping,
+Ancestry group names, research priorities, and batch state -- lives in a per-tester
+config file under `testers/`. To work a different kit, point the Active Tester
+block in `CLAUDE.md` at a different config file. To add a kit, copy
+`testers/_TEMPLATE.md`.
 
 ## Current Status
 
-Active research for Adrienne Balsky Peckler.
+Active tester: Adrienne Balsky Peckler (`testers/adrienne-peckler.md`).
 Batch 1: 150 matches completed (API data populated, hyperlinks outstanding).
 
 ## How This Repo Is Organized
 
 ```
 ancestry-dna-pipeline/
-├── CLAUDE.md          -- AI instruction file. Load this at the start of every session.
+├── CLAUDE.md          -- AI instruction file (generic). Load at the start of every session.
 ├── CHANGELOG.md       -- Session-by-session decision log.
 ├── README.md          -- This file.
+├── fetch_shared_dna.py -- Parameterized API collection script (tester GUID is an argument).
+├── testers/           -- Per-tester config files (_TEMPLATE.md plus one per kit).
 ├── docs/              -- Reference documents and research notes.
 └── dna-match-extractor-plugin/  -- Cowork plugin for running the pipeline.
 ```
 
 ## Using With AI
 
-**CLAUDE.md is the project brain.** At the start of any AI session working on this
-project, load CLAUDE.md first. It contains the full context: tester configuration,
-methodology rules, column schema, threshold research, and current batch status.
+**CLAUDE.md is the project brain.** At the start of any AI session, load CLAUDE.md
+first, then load the active tester config it points to. Together they carry the full
+context: generic pipeline, methodology, thresholds, plus the active tester's
+configuration and batch status.
 
 Bootloader instruction for Claude projects:
 ```
 At the start of every conversation, fetch and read this file fully:
-[PASTE RAW GITHUB URL FOR CLAUDE.md HERE]
-Read it completely before responding to anything. Never rely on memory.
+https://raw.githubusercontent.com/davewilbur78/ancestry-dna-pipeline/main/CLAUDE.md
+Then load the active tester config it names under "Active Tester."
+Read everything completely before responding. Never rely on memory.
 ```
 
-## Using the Cowork Plugin
+## Adding a New Kit
 
-Install `dna-match-extractor-plugin` in Cowork. Then simply:
-1. Upload your Genealogy Assistant CSV
-2. Provide your Ancestry kit URL
-3. The plugin handles everything else
+1. Copy `testers/_TEMPLATE.md` to `testers/{firstname-lastname}.md` and fill it in.
+2. Repoint the Active Tester block in `CLAUDE.md` at the new config.
+3. Upload that kit's Genealogy Assistant CSV and provide its Ancestry kit URL.
+4. Run the pipeline. The tester GUID comes from the kit URL; nothing is hardcoded.
 
 ## Setup Requirements
 

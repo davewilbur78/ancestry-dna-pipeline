@@ -1,6 +1,6 @@
 ---
 Ancestry DNA Match Pipeline CLAUDE.md
-Version: 1.0
+Version: 2.0
 Last updated: 2026-06-04 UTC
 ---
 
@@ -10,58 +10,49 @@ This file is the single source of truth for the Ancestry DNA Match Pipeline proj
 It lives at: https://raw.githubusercontent.com/davewilbur78/ancestry-dna-pipeline/main/CLAUDE.md
 
 Fetch and read this file fully at the start of every session.
+Then load the active tester config named under "Active Tester" below.
 Never rely on memory from previous conversations.
-Confirm the version and date out loud when loaded.
+Confirm the CLAUDE.md version, date, AND the active tester name out loud when loaded.
 
 ---
 
 ## What This Is
 
-A repeatable, automated pipeline for enriching AncestryDNA match exports with data
-that Ancestry does not include in its CSV downloads. The pipeline takes a Genealogy
-Assistant CSV export and a kit URL as inputs, calls the Ancestry API for missing DNA
-fields, collects tree and common ancestor hyperlinks via browser automation, and
-produces a fully formatted Excel workbook optimized as a working research tool.
+A repeatable, automated, kit-agnostic pipeline for enriching AncestryDNA match
+exports with data that Ancestry does not include in its CSV downloads. The
+pipeline takes a Genealogy Assistant CSV export and a kit URL as inputs, calls the
+Ancestry API for missing DNA fields, collects tree and common ancestor hyperlinks
+via browser automation, and produces a fully formatted Excel workbook optimized as
+a working research tool.
+
+The pipeline and methodology in this file are generic and apply to any tester.
+Everything specific to one person -- kit ID, family lines, surname-to-quadrant
+mapping, Ancestry group names, research priorities, and batch state -- lives in a
+per-tester config file under `testers/`. To work a different kit, point the Active
+Tester block below at a different config file.
 
 Designed for Ashkenazi Jewish genetic genealogy research. All methodology follows
-GPS standards and Ashkenazi-specific endogamy awareness. The primary researcher
-is the owner of this repo.
+GPS standards and Ashkenazi-specific endogamy awareness.
 
 ---
 
-## Current Tester
+## Active Tester
 
-**Adrienne Balsky Peckler**
-Kit ID: 4FB3190E-37B7-401F-A8CF-431950413661
-Platform: AncestryDNA
+This project is kit-agnostic. The tester-specific configuration is loaded from a
+separate file so the same pipeline can serve any kit.
 
-### Configuration Block
+ACTIVE TESTER: Adrienne Balsky Peckler
+CONFIG FILE: testers/adrienne-peckler.md
+CONFIG RAW URL: https://raw.githubusercontent.com/davewilbur78/ancestry-dna-pipeline/main/testers/adrienne-peckler.md
 
-TESTER: Adrienne Balsky Peckler
-ANCHOR: [to be confirmed -- Marvin Balsky or Harriette Mendick when available]
+After reading this CLAUDE.md, load the config file named above and read it fully.
+It defines the active tester's kit ID, line anchors, surname-to-line mapping,
+Ancestry groups, research priority order, and current batch state.
 
-LINE ANCHORS:
-  PP - Paternal-Paternal (Green):  Balsky line
-  PM - Paternal-Maternal (Blue):   Singer/Springer line
-  MP - Maternal-Paternal (Yellow): Mendick line
-  MM - Maternal-Maternal (Coral):  Weinberger/Danko line
+To switch kits: change the two lines above (ACTIVE TESTER and CONFIG FILE) to point
+at the new tester's config, then load it.
 
-GREAT-GRANDPARENT COUPLES (8-couple tier system, partially known):
-  PP1: Isaac Balsky + Hhabena Balsky
-  PP2: [Giberman/Lieberman couple -- Sarah Lieberman Giberman's parents]
-  PM1: Samuel Singer + Minnie Jacobs
-  PM2: Tzvi Dov Springer + unknown wife
-  MP1: Harry Mendick + Lena Minster
-  MP2: [to be determined]
-  MM1: Adolph Weinberger + [unknown]
-  MM2: Elsie Danko's family
-
-PLATFORMS IN USE: AncestryDNA (primary). GEDmatch, FTDNA, MyHeritage to be confirmed.
-
-ANCESTRY GROUPS ACTIVE:
-  "Balsky" -- PP line (green)
-  "SINGER/SPRINGER" -- PM line (blue)
-  Mendick and Weinberger/Danko groups not yet created in Ancestry
+To onboard a new kit: see "Adding a New Tester" below.
 
 ---
 
@@ -80,6 +71,7 @@ ANCESTRY GROUPS ACTIVE:
   Endpoint: https://www.ancestry.com/discoveryui-matches/parents/list/api/matchSharedDna/{TESTER_GUID}/{MATCH_GUID}
   Returns: totalSharedCentimorgans (unweighted), longestSharedSegment, numSharedSegments, sharedCentimorgans (weighted)
 - Uses browser_cookie3 to authenticate via Chrome session cookies
+- The tester GUID is supplied as a parameter -- never hardcoded
 - Runs in concurrent batches (default 50 at a time) with 150ms delay between requests
 - Handles errors gracefully, retries once on failure, logs any remaining failures
 - No hard limit on total matches -- process in batches of any size
@@ -97,17 +89,19 @@ ANCESTRY GROUPS ACTIVE:
 - Family Tree hyperlinks to actual tree
 - Common Ancestor hyperlinks to ThruLines page
 - AScM = IFERROR(D/E, "") -- live Excel formula, not hardcoded
-- Color coding by tier (based on longest segment):
+- Color coding by tier (based on longest segment), generic for any tester:
     RED:         longest < 20 OR AScM < 12 (fails filter)
     LIGHT GREEN: longest 20-30 (passes, investigate)
     MED GREEN:   longest 30-50 (solid signal)
     DARK GREEN:  longest 50+ (high priority, bold black text on #70AD47)
-- Line Assignment column color coded by grandparent line:
-    PP (Balsky):           #E2EFDA light green
-    PM (Singer/Springer):  #BDD7EE light blue
-    MP (Mendick):          #FFEB9C light yellow
-    MM (Weinberger/Danko): #FCE4D6 light coral
-    Multiple:              #E2CEEF light purple
+- Line Assignment column color coded by grandparent quadrant. Quadrant colors are a
+  fixed project convention (cool = paternal, warm = maternal); the surname behind
+  each quadrant comes from the active tester config:
+    PP (paternal-paternal):   #E2EFDA light green
+    PM (paternal-maternal):   #BDD7EE light blue
+    MP (maternal-paternal):   #FFEB9C light yellow
+    MM (maternal-maternal):   #FCE4D6 light coral
+    Multiple:                 #E2CEEF light purple
 
 ---
 
@@ -149,7 +143,8 @@ Color assignment follows cool = paternal, warm = maternal convention:
   MM: coral/red family
 
 Dots display in Ancestry in a fixed palette order regardless of assignment sequence.
-Plan group creation order accordingly.
+Plan group creation order accordingly. The specific group names in use for the
+active tester are listed in that tester's config file.
 
 ---
 
@@ -167,12 +162,27 @@ Plan group creation order accordingly.
 
 ## Batch Management
 
-Batches are numbered sequentially per tester. Current state:
-  Batch 1: 150 matches (rows 1-150). Spreadsheet: Adrienne_Peckler_DNA_Matches_Batch1.xlsx
-  Status: API data complete. Tree/CA hyperlinks outstanding.
+Batches are numbered sequentially per tester. The current batch state for the active
+tester (which batches exist, row counts, what is complete vs outstanding) is recorded
+in that tester's config file under `testers/`, not here.
 
 When adding batches: append to the same workbook as new sheets, OR create new
-batch files and note them here. Do not overwrite prior batches.
+batch files and note them in the tester config. Do not overwrite prior batches.
+
+---
+
+## Adding a New Tester
+
+1. Copy `testers/_TEMPLATE.md` to `testers/{firstname-lastname}.md`.
+2. Fill in the new tester's kit ID, line anchors, surname-to-line mapping, known
+   great-grandparent couples, Ancestry group names, and research priorities.
+3. Update the Active Tester block in this CLAUDE.md to point at the new config file
+   (both ACTIVE TESTER and CONFIG FILE / CONFIG RAW URL).
+4. Provide the new kit's Genealogy Assistant CSV export and Ancestry kit URL.
+5. Run the pipeline. The tester GUID is taken from the kit URL; nothing is hardcoded.
+
+Prior testers' config files stay in `testers/` and remain reusable. Switching back
+is just a matter of repointing the Active Tester block.
 
 ---
 
@@ -180,9 +190,13 @@ batch files and note them here. Do not overwrite prior batches.
 
 ```
 ancestry-dna-pipeline/
-├── CLAUDE.md                    -- this file, project brain
+├── CLAUDE.md                    -- this file, generic project brain
 ├── CHANGELOG.md                 -- session log
 ├── README.md                    -- human overview
+├── fetch_shared_dna.py          -- parameterized API collection script
+├── testers/
+│   ├── _TEMPLATE.md             -- blank per-tester config template
+│   └── adrienne-peckler.md      -- active tester config
 ├── docs/
 │   ├── column-schema.md         -- full column spec with rationale
 │   └── threshold-research.md    -- AScM/longest segment research notes
@@ -205,6 +219,7 @@ Working directory: wherever the tester's files are stored locally.
 Python dependencies: requests, browser-cookie3, openpyxl, pandas
 Cookie source: Chrome (browser_cookie3 default)
 API rate limiting: 150ms delay minimum between requests, concurrent batches of 50
+Tester GUID: always passed as a parameter to the script, never hardcoded
 Output naming: {Tester_LastName}_DNA_Matches_Batch{N}.xlsx
 
 ---
@@ -212,14 +227,13 @@ Output naming: {Tester_LastName}_DNA_Matches_Batch{N}.xlsx
 ## Session-Close Checklist
 
 Before ending any productive session:
-1. New decisions made? Update this file, bump version, commit.
+1. New decisions made? Update this file (or the tester config), bump version, commit.
 2. New files produced? Commit them.
 3. Write a CHANGELOG entry.
-4. Note what's next under "What To Work On Next Session."
+4. Note what's next in the active tester config under "What's Next."
 
 ## What To Work On Next Session
 
-- Browser pass for Adrienne Batch 1: collect tree URLs and common ancestor URLs
-- Build Batch 2 (next 150 matches) using the Cowork plugin once it exists
-- Confirm Anchor kit availability (Marvin Balsky or Harriette Mendick)
-- Set up Mendick and Weinberger/Danko groups in Ancestry
+Generic project-level next steps live here; per-tester next steps live in each
+tester's config file. For the current active tester, see the "What's Next" section
+of `testers/adrienne-peckler.md`.
