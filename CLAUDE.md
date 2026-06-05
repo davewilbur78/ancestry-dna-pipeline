@@ -7,7 +7,7 @@ Last updated: 2026-06-04 UTC
 ## Operating Model
 
 This file is the single source of truth for the Ancestry DNA Match Pipeline project.
-It lives at: [PASTE RAW GITHUB URL HERE AFTER REPO CREATION]
+It lives at: https://raw.githubusercontent.com/davewilbur78/ancestry-dna-pipeline/main/CLAUDE.md
 
 Fetch and read this file fully at the start of every session.
 Never rely on memory from previous conversations.
