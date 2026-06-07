@@ -1,6 +1,6 @@
 ---
 Klein Super-Siblings Superkit — CLAUDE.md
-Version: 1.1
+Version: 1.2
 Last updated: 2026-06-07 UTC
 ---
 
@@ -40,6 +40,10 @@ grandparental line (PP/PM/MP/MM), and analyzed for genealogically significant co
 This is not a pipeline project. It is an analytical project that uses the superkit as
 a super-sibling: a proxy for nearly the full parental genome (~93-94% combined coverage
 from four siblings) against which any external kit can be compared.
+
+The core job is sifting: using the superkit as a sieve to separate matches worth
+investigating from background noise, and then using known relatives' comparison kits
+to assign those matches to grandparental lines.
 
 For background on the sibling superkit concept and the full build methodology, see:
 `methodology/Klein_Sibling_Superkit_Methodology.md`
@@ -181,6 +185,10 @@ Adrienne Peckler (52), Claire Hertz (44), Saul Klein (38), Peri Sigman (35),
 Patricia Rose (31), Troy60681 (30), Susan Novak Backer (29)
 
 ### Excluded GUIDs (from all analytical sheets)
+These are testers and their immediate family who appear in sibling match exports
+and must be excluded globally. Kit-specific exclusions (immediate family of a
+comparison kit subject) belong in that comparison workbook's Notes sheet, not here.
+
 | Person | Relationship | GUID |
 |--------|-------------|------|
 | Gerri Taylor | Sibling tester | 6E56EBFB-76A8-4342-AABB-1F9AF8A1746C |
@@ -192,7 +200,6 @@ Patricia Rose (31), Troy60681 (30), Susan Novak Backer (29)
 | Rachel Sanda | Cynthia's child | 7E652513-2FB4-4FF4-8E23-066D8C5D4514 |
 | Harry Nelson | Susan's grandson (name pattern) | [GUID not yet captured] |
 | Jacob Sanda | Cynthia's grandson (name pattern) | [GUID not yet captured] |
-| Troy60681 | Adrienne Peckler's son -- exclude from all Adrienne comparison work. His AP-side figure (268 cM Longest, 3448 unwtd cM) is immediate-family scale and is not a comparable shared match. | 21DA164D-DC18-4507-A753-61944E401D2F |
 
 ---
 
@@ -304,16 +311,29 @@ GUID: 6E56EBFB-76A8-4342-AABB-1F9AF8A1746C) as the default tester anchor for
 shared match and superkit-only sheets. For the external kit's own sheet, that kit's
 GUID is the tester anchor.
 
+Kit-specific exclusions (immediate family of the comparison subject who appear in
+their match export but are not genealogically relevant comparison targets) are
+documented in that comparison workbook's Notes sheet. They do not belong in this file.
+
 ### Step 4: Interpret the intersection
+The intersection is a sieve output. The job is identifying which shared matches
+are worth investigating, not cataloguing all of them. Priority goes to:
+- Matches with ThruLines on the SK side (documented ancestor hypothesis)
+- Matches with consistent sibling subpatterns (e.g. GS·L) suggesting real segment inheritance
+- Matches where the comparison kit's cM is meaningful relative to the expected relationship
+
+What the intersection cannot do on its own: assign a line. It can narrow the field.
+Line assignment requires corroborating documentary evidence meeting GPS standards.
+
 If the external kit's relationship is known:
 - Paternal half-sibling: every shared match is almost certainly paternal
 - Known paternal first cousin: shared matches narrow to the specific grandparent pair
-- Known maternal relative: symmetric -- shared matches are maternal
+- Known 2nd cousin through a specific line: shared matches are candidates for that line,
+  but the intersection will be small and not all shared matches will be through that line
 
 If the relationship is unknown:
 - Examine which Sibling Pattern subsets the shared matches fall into
 - Check if any shared matches already have Line Assignments in the superkit
-- Existing line assignments in shared matches are a hypothesis about the unknown person's line
 
 ### Step 5: Write back conclusions
 Confirmed line assignments are entered manually into the superkit's Line Assignment column.
@@ -337,23 +357,12 @@ Notes sheet. A match absent from the superkit may simply be a newer tester.
 | Maternal 2nd cousin | 2nd cousin | MP or MM | Pending |
 | Shtetl research group | Unknown (suspected maternal) | TBD | Pending |
 
-**Note on Adrienne Peckler:** Her pipeline configuration (root CLAUDE.md,
-testers section) shows PM line as Samuel Singer + Minnie Jacobs + Tzvi Dov Springer.
-These are Jacob Singer's parents -- the Klein super-siblings' maternal grandfather's parents.
-Adrienne's connection runs through the Singer/Springer line (MP for the Klein super-siblings,
-PM for Adrienne). She appears in the superkit with ThruLines at 52 cM Max Longest.
-As a confirmed 2nd cousin, she is not expected to show overlapping matches with all four
-siblings. The intersection of 11 shared matches is consistent with this relationship.
-Troy60681 (her son, GUID: 21DA164D-DC18-4507-A753-61944E401D2F) must be excluded from
-all Adrienne comparison work -- see Excluded GUIDs table.
-
-**Adrienne comparison priorities (from first comparison run, 2026-06-07):**
-- Arnold Schneider: ThruLines match in SK (57 cM, GSCL) + 37 cM for Adrienne. Only match
-  with a documented common ancestor hypothesis. Highest priority for documentary follow-up.
-- Rachelle Holden + S.V. (giggerus): both show GS·L pattern in SK and appear in Adrienne's
-  filtered set. Same 3-sibling subset appearing in two independent matches is worth tracking.
-- Surnames alone (e.g. Jacobs) are never sufficient to assign a line. Do not flag surname
-  matches without corroborating DNA or documentary evidence.
+**Note on Adrienne Peckler:** Her connection runs through the Singer/Springer line
+(MP for the Klein super-siblings). As a confirmed 2nd cousin she shares one set of
+great-grandparents with the siblings, so overlapping matches with all four siblings
+is not expected. The intersection of shared matches should concentrate on MP line
+candidates but will be small. Specific findings from the first comparison run are
+documented in KSS_B1_vs_Adrienne_Peckler.xlsx Notes sheet.
 
 ---
 
