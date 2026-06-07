@@ -1,6 +1,6 @@
 ---
 Klein Super-Siblings Superkit — CLAUDE.md
-Version: 1.0
+Version: 1.1
 Last updated: 2026-06-07 UTC
 ---
 
@@ -12,6 +12,14 @@ It lives at: https://raw.githubusercontent.com/davewilbur78/ancestry-dna-pipelin
 Fetch and read this file fully at the start of every session.
 Never rely on memory from previous conversations.
 Confirm the version and date out loud when loaded.
+
+After loading this file, immediately read these two skills in order before
+doing any analysis or interpretation:
+  1. /mnt/skills/plugins/dna-match-extractor:ashkenazi-analyst/SKILL.md
+  2. /mnt/skills/user/ashkenazi-genetic-genealogist/SKILL.md
+These are mandatory, not optional. Do not begin any match interpretation,
+prioritization, or line assignment without having read both. Confirm they
+are loaded alongside the CLAUDE.md version confirmation.
 
 This project lives in the `klein-superkit/` subfolder of the ancestry-dna-pipeline repo.
 The root-level CLAUDE.md governs individual workbook construction (the pipeline tool).
@@ -184,6 +192,7 @@ Patricia Rose (31), Troy60681 (30), Susan Novak Backer (29)
 | Rachel Sanda | Cynthia's child | 7E652513-2FB4-4FF4-8E23-066D8C5D4514 |
 | Harry Nelson | Susan's grandson (name pattern) | [GUID not yet captured] |
 | Jacob Sanda | Cynthia's grandson (name pattern) | [GUID not yet captured] |
+| Troy60681 | Adrienne Peckler's son -- exclude from all Adrienne comparison work. His AP-side figure (268 cM Longest, 3448 unwtd cM) is immediate-family scale and is not a comparable shared match. | 21DA164D-DC18-4507-A753-61944E401D2F |
 
 ---
 
@@ -276,6 +285,25 @@ Join external kit and superkit by GUID. Identify:
 Name: KSS_B1_vs_{RelativeName}.xlsx
 Sheets: Shared Matches | Superkit Only | [RelativeName] Kit | Notes
 
+### Comparison Workbook -- Required Output Standards
+All comparison workbooks must include hyperlinks. A workbook without hyperlinks
+is data, not a tool. This is non-negotiable.
+
+Hyperlink construction rules:
+- Match Name column: https://www.ancestry.com/dna/matches/{TESTER_GUID}/compare/{MATCH_GUID}
+- Family Tree column: https://www.ancestry.com/discoveryui-matches/compare/{TESTER_GUID}/with/{MATCH_GUID}
+- Common Ancestor column: same pattern as Family Tree
+
+GUIDs are always present in every sheet and are the sole construction source for
+all hyperlinks. Never attempt to read hyperlinks from source files -- openpyxl
+read_only mode silently discards embedded hyperlink objects. Always build from GUIDs.
+
+For comparison workbooks, the relevant TESTER_GUID depends on which sibling's
+perspective the compare URL should use. Use the superkit's primary tester (Gerri,
+GUID: 6E56EBFB-76A8-4342-AABB-1F9AF8A1746C) as the default tester anchor for
+shared match and superkit-only sheets. For the external kit's own sheet, that kit's
+GUID is the tester anchor.
+
 ### Step 4: Interpret the intersection
 If the external kit's relationship is known:
 - Paternal half-sibling: every shared match is almost certainly paternal
@@ -304,17 +332,28 @@ Notes sheet. A match absent from the superkit may simply be a newer tester.
 | Person | Relationship to Klein Super-Siblings | Relevant Line | Workbook Status |
 |--------|--------------------------------------|---------------|-----------------|
 | Paternal half-sibling | Half-sib (paternal) | Primary P/M sieve | Pending |
-| Adrienne Balsky Peckler | Distant cousin | Singer/Springer = MP | Batch 1 exists in pipeline project |
+| Adrienne Balsky Peckler | 2nd cousin (confirmed) | Singer/Springer = MP | KSS_B1_vs_Adrienne_Peckler.xlsx built 2026-06-07; rebuild needed (hyperlinks missing) |
 | Paternal 1st cousin(s) | 1st cousin | PP or PM | Pending |
 | Maternal 2nd cousin | 2nd cousin | MP or MM | Pending |
 | Shtetl research group | Unknown (suspected maternal) | TBD | Pending |
 
-**Note on Adrienne Peckler (priority):** Her pipeline configuration (root CLAUDE.md,
+**Note on Adrienne Peckler:** Her pipeline configuration (root CLAUDE.md,
 testers section) shows PM line as Samuel Singer + Minnie Jacobs + Tzvi Dov Springer.
 These are Jacob Singer's parents -- the Klein super-siblings' maternal grandfather's parents.
 Adrienne's connection runs through the Singer/Springer line (MP for the Klein super-siblings,
 PM for Adrienne). She appears in the superkit with ThruLines at 52 cM Max Longest.
-Building KSS_B1_vs_Adrienne_Peckler.xlsx is the first actionable comparison step.
+As a confirmed 2nd cousin, she is not expected to show overlapping matches with all four
+siblings. The intersection of 11 shared matches is consistent with this relationship.
+Troy60681 (her son, GUID: 21DA164D-DC18-4507-A753-61944E401D2F) must be excluded from
+all Adrienne comparison work -- see Excluded GUIDs table.
+
+**Adrienne comparison priorities (from first comparison run, 2026-06-07):**
+- Arnold Schneider: ThruLines match in SK (57 cM, GSCL) + 37 cM for Adrienne. Only match
+  with a documented common ancestor hypothesis. Highest priority for documentary follow-up.
+- Rachelle Holden + S.V. (giggerus): both show GS·L pattern in SK and appear in Adrienne's
+  filtered set. Same 3-sibling subset appearing in two independent matches is worth tracking.
+- Surnames alone (e.g. Jacobs) are never sufficient to assign a line. Do not flag surname
+  matches without corroborating DNA or documentary evidence.
 
 ---
 
@@ -329,9 +368,14 @@ Building KSS_B1_vs_Adrienne_Peckler.xlsx is the first actionable comparison step
    Do not use this term for cross-platform appearance. That is "cross-pool corroboration."
 7. Pile-up regions on certain chromosomes produce elevated Ashkenazi background.
    Flag; do not treat as confirming a specific common ancestor without support.
+   Chromosomal coordinates are required to identify a pile-up. Similar longest segment
+   values across multiple matches are not evidence of a pile-up without coordinates.
 8. DNA evidence never stands alone. Correlate with documentary evidence (GPS standard).
 9. Anti-fabrication: never invent cM values, segment data, relationship conclusions, or sources.
 10. GPS methodology governs all proof standards.
+11. Surnames are search leads, not evidence. A match sharing a surname with a known
+    ancestor line is not a candidate for that line without corroborating DNA or documentary
+    evidence. Never flag a match on surname alone.
 
 ### Key Research Authorities
 - Kitty Cooper: longest segment > 20 cM minimum for recent traceable Ashkenazi connection
@@ -370,11 +414,15 @@ https://github.com/davewilbur78/ancestry-dna-pipeline/tree/main/klein-superkit/
 
 ## What To Work On Next Session
 
-1. Build KSS_B1_vs_Adrienne_Peckler.xlsx comparison workbook
-2. Begin Line Assignment for the 11 ThruLines matches (strongest evidence available)
-3. Analyze Jeannette Klein (186 cM, GSCL) and H.N. (129 cM, GSCL) -- both high priority
-4. Identify and obtain paternal half-sibling kit (primary P/M sieve)
-5. Commit methodology document to `methodology/` subfolder
+1. Rebuild KSS_B1_vs_Adrienne_Peckler.xlsx with hyperlinks (omitted in first build)
+2. Investigate Arnold Schneider -- ThruLines match in SK + 37 cM for Adrienne;
+   seek documentary corroboration for ThruLines hypothesis before drawing conclusions
+3. Track Rachelle Holden and S.V. (giggerus) -- GS·L pattern in SK, both appear in
+   Adrienne filtered set; candidate MP line matches pending corroboration
+4. Begin Line Assignment for the 11 ThruLines matches (strongest evidence available)
+5. Analyze Jeannette Klein (186 cM, GSCL) and H.N. (129 cM, GSCL) -- both high priority
+6. Identify and obtain paternal half-sibling kit (primary P/M sieve)
+7. Commit methodology document to `methodology/` subfolder
 
 ---
 
