@@ -1,6 +1,6 @@
 ---
 Klein Super-Siblings Superkit — CLAUDE.md
-Version: 1.2
+Version: 1.3
 Last updated: 2026-06-07 UTC
 ---
 
@@ -41,9 +41,21 @@ This is not a pipeline project. It is an analytical project that uses the superk
 a super-sibling: a proxy for nearly the full parental genome (~93-94% combined coverage
 from four siblings) against which any external kit can be compared.
 
-The core job is sifting: using the superkit as a sieve to separate matches worth
-investigating from background noise, and then using known relatives' comparison kits
-to assign those matches to grandparental lines.
+The purpose of this project is to figure out who these DNA matches are -- to identify
+real individuals, determine how they connect to the Klein super-siblings' ancestry, and
+use that knowledge to extend the family tree beyond what documentary records alone can
+provide. DNA matches are a population of people who share ancestry with the siblings.
+The superkit organizes that population. Comparison kits sort it by grandparental line.
+But the sorting is in service of a research goal: working backward from those sorted
+populations, applying domain expertise, and correlating DNA evidence with documentary
+evidence under GPS standards to make informed conclusions about who these people are
+and where they fit in the family tree.
+
+This matters most at the brick walls. On the MP line, Minnie Jacobs' parents are known
+only by a first name. The Springer-to-Singer surname transition at immigration is
+unresolved. Sorted MP-line matches whose trees can be examined and cross-referenced
+are the primary tool for pushing through those walls. The DNA surfaces the candidates.
+The research determines who they actually are.
 
 For background on the sibling superkit concept and the full build methodology, see:
 `methodology/Klein_Sibling_Superkit_Methodology.md`
@@ -80,7 +92,7 @@ The fan chart in `family/fan-chart.md` applies equally to all four.
 | Gerri   | Gerri Taylor | Klein | G | 6E56EBFB-76A8-4342-AABB-1F9AF8A1746C |
 | Susan   | Susan Beyer  | Klein | S | 676A3661-6BE5-4901-B79E-A34CC178C785 |
 | Cynthia | Cynthia Wilbur (Managed by Rachel Sanda) | Klein | C | 41814A70-DA1A-46D9-B7BF-9B5BBF12D87D |
-| Lee     | Lee Klein    | Klein | L | 01CD5A24-FAA0-4A03-990B-49211928FA5E |
+| Lee     | Lee Klein    | Klein | L | 01CD5A24-FAA0-4A03-990B-49211928FAE |
 
 ---
 
@@ -307,7 +319,7 @@ read_only mode silently discards embedded hyperlink objects. Always build from G
 
 For comparison workbooks, the relevant TESTER_GUID depends on which sibling's
 perspective the compare URL should use. Use the superkit's primary tester (Gerri,
-GUID: 6E56EBFB-76A8-4342-AABB-1F9AF8A1746C) as the default tester anchor for
+GUID: 6E56EBFB-76A8-4342-AABB-1F9AF8A1764C) as the default tester anchor for
 shared match and superkit-only sheets. For the external kit's own sheet, that kit's
 GUID is the tester anchor.
 
@@ -315,15 +327,27 @@ Kit-specific exclusions (immediate family of the comparison subject who appear i
 their match export but are not genealogically relevant comparison targets) are
 documented in that comparison workbook's Notes sheet. They do not belong in this file.
 
+### Step 3b: First Pass and Clarifying Questions
+Before proceeding to analysis, do a first pass review of the comparison workbook.
+After that review, ask the researcher any clarifying questions about specific matches
+that would benefit from additional context -- known relationships, tree information,
+group tags, or anything the researcher knows that is not visible in the data.
+Do this as a single consolidated question, not a running series of interruptions.
+Proceed to analysis only after the researcher has had the opportunity to respond.
+This prevents assumptions being made mid-analysis that require correction later.
+
 ### Step 4: Interpret the intersection
-The intersection is a sieve output. The job is identifying which shared matches
-are worth investigating, not cataloguing all of them. Priority goes to:
-- Matches with ThruLines on the SK side (documented ancestor hypothesis)
-- Matches with consistent sibling subpatterns (e.g. GS·L) suggesting real segment inheritance
+The intersection identifies candidates worth investigating. The analytical goal is
+not to catalogue every shared match but to determine which ones can contribute to
+identifying who these people are and how they connect to the family tree.
+
+Priority goes to:
+- Matches with ThruLines on the SK side (documented ancestor hypothesis to test)
+- Matches with consistent sibling subpatterns suggesting real segment inheritance
 - Matches where the comparison kit's cM is meaningful relative to the expected relationship
 
-What the intersection cannot do on its own: assign a line. It can narrow the field.
-Line assignment requires corroborating documentary evidence meeting GPS standards.
+What the intersection cannot do on its own: confirm a connection. It narrows the field.
+Identification requires corroborating documentary evidence meeting GPS standards.
 
 If the external kit's relationship is known:
 - Paternal half-sibling: every shared match is almost certainly paternal
