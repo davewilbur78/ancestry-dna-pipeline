@@ -1,6 +1,6 @@
 ---
 Klein Super-Siblings Superkit — CLAUDE.md
-Version: 1.3
+Version: 1.4
 Last updated: 2026-06-07 UTC
 ---
 
@@ -92,7 +92,7 @@ The fan chart in `family/fan-chart.md` applies equally to all four.
 | Gerri   | Gerri Taylor | Klein | G | 6E56EBFB-76A8-4342-AABB-1F9AF8A1746C |
 | Susan   | Susan Beyer  | Klein | S | 676A3661-6BE5-4901-B79E-A34CC178C785 |
 | Cynthia | Cynthia Wilbur (Managed by Rachel Sanda) | Klein | C | 41814A70-DA1A-46D9-B7BF-9B5BBF12D87D |
-| Lee     | Lee Klein    | Klein | L | 01CD5A24-FAA0-4A03-990B-49211928FAE |
+| Lee     | Lee Klein    | Klein | L | 01CD5A24-FAA0-4A03-990B-49211928FA5E |
 
 ---
 
@@ -207,11 +207,11 @@ comparison kit subject) belong in that comparison workbook's Notes sheet, not he
 | Susan Beyer | Sibling tester | 676A3661-6BE5-4901-B79E-A34CC178C785 |
 | Cynthia Wilbur | Sibling tester | 41814A70-DA1A-46D9-B7BF-9B5BBF12D87D |
 | Lee Klein | Sibling tester | 01CD5A24-FAA0-4A03-990B-49211928FA5E |
-| David Wilbur | Cynthia's spouse | E4936FEE-6266-4579-A6A5-501A2D41B365 |
+| David Wilbur | Cynthia's child | E4936FEE-6266-4579-A6A5-501A2D41B365 |
 | Rebekah Wilbur | Cynthia's child | AE5CE724-01ED-443B-8E47-CFDBDEE6A8A8 |
 | Rachel Sanda | Cynthia's child | 7E652513-2FB4-4FF4-8E23-066D8C5D4514 |
 | Harry Nelson | Susan's grandson (name pattern) | [GUID not yet captured] |
-| Jacob Sanda | Cynthia's grandson (name pattern) | [GUID not yet captured] |
+| Jacob Sanda | Cynthia's grandson | EF16C4FC-C1EF-4E2D-9D2E-306008C0880F |
 
 ---
 
@@ -280,7 +280,7 @@ The four siblings together cover ~93-94% of both parents' combined genome. Any r
 recent match is likely to appear in at least one sibling's top-N. The Sibling Pattern
 column (GSCL encoding, dots for absent) provides a phasing proxy: matches appearing
 consistently in the same subset of siblings likely connect through the same ancestral
-line, because those siblings inherited the relevant genomic region.
+nline, because those siblings inherited the relevant genomic region.
 
 This makes the superkit more powerful than any single kit for:
 1. Distinguishing endogamy background from real recent matches (low cM Range + all 4 siblings = background signal)
