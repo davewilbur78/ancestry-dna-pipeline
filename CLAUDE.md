@@ -1,6 +1,6 @@
 ---
 Ancestry DNA Match Pipeline CLAUDE.md
-Version: 2.5
+Version: 2.6
 Last updated: 2026-06-14 UTC
 ---
 
@@ -91,7 +91,7 @@ so replaying them is advanced and not required for a usable workbook.
 
 ### Step 4: Build Spreadsheet
 
-Run build_v2.1.py (or the current version) against the enriched input XLSX.
+Run build_v2.2.py (or the current version) against the enriched input XLSX.
 
 - Workbook structure: 4 tabs in order: Start Here | Priority Matches | Watch List | All Matches
 - Column order (A-O): Match Name | Flag | Longest Segment | AScM | Unweighted cM |
@@ -214,7 +214,7 @@ ancestry-dna-pipeline/
 ├── CHANGELOG.md                 -- session log
 ├── README.md                    -- human overview
 ├── fetch_shared_dna.py          -- parameterized API collection script (local fallback)
-├── build_v2.1.py                -- workbook builder, current production version
+├── build_v2.2.py                -- workbook builder, current production version
 ├── testers/                     -- OPTIONAL per-kit research notes (never required)
 │   ├── _TEMPLATE.md             -- blank notes template
 │   ├── adrienne-peckler.md
@@ -249,7 +249,7 @@ Tester GUID: always passed as a parameter to the script, never hardcoded
 The workbook builder is versioned: build_v{MAJOR.MINOR}.py
   MAJOR: significant structural changes (new tabs, schema changes)
   MINOR: design improvements, bug fixes, cosmetic changes
-  Current production version: build_v2.1.py
+  Current production version: build_v2.2.py
 
 ### Output Naming
 Format: {FirstName}_{LastName}_{N}matches_{YYYYMMDD}_v{SCRIPT_VERSION}.xlsx
@@ -257,8 +257,8 @@ Format: {FirstName}_{LastName}_{N}matches_{YYYYMMDD}_v{SCRIPT_VERSION}.xlsx
   - N: total match count from the input file (all rows, not just priority matches)
   - YYYYMMDD: modification date of the enriched input XLSX (auto-derived by the script)
   - SCRIPT_VERSION: taken from SCRIPT_VERSION constant in the build script
-  
-  Example: Lesley_Sterling_1000matches_20260612_v2.1.xlsx
+
+  Example: Lesley_Sterling_1000matches_20260612_v2.2.xlsx
 
 REQUIRED: always include BOTH first and last name. Surname-only filenames are
 forbidden -- a family shares one surname, so "Wilbur_..." is ambiguous across
@@ -267,13 +267,23 @@ multiple kits. Apply the same FirstName_LastName rule to any companion files
 
 ### CONFIG Block (build script)
 At the top of every build script, a clearly marked CONFIG block contains:
-  TESTER_NAME    = "First Last"        # used in workbook header and output filename
-  BATCH_NUM      = "Batch N"           # displayed in workbook subtitle
-  SOURCE_FILE    = "/path/to/input.xlsx"
-  OUTPUT_DIR     = "/path/to/output/folder"
-  SCRIPT_VERSION = "2.1"               # drives output filename versioning
+  TESTER_NAME    = "First Last"              # used in workbook header and output filename
+  BATCH_NUM      = "Batch N"                 # displayed in workbook subtitle
+  SOURCE_FILE    = "/path/to/input.xlsx"     # UPDATE THIS for each run
+  OUTPUT_DIR     = "/path/to/output/folder"  # UPDATE THIS for each run
+  SCRIPT_VERSION = "2.2"                     # drives output filename versioning
 
 The extraction date and output filename are derived automatically; do not set them.
+
+### Source XLSX Column Schema (enriched pipeline output)
+The build script reads the enriched XLSX produced by Steps 1-3. Expected headers:
+  Match Name | Longest Segment | AScM | Unweighted cM | Segments | Weighted cM |
+  Family Tree | Tree Size | Common Ancestor | Line Assignment | Groups | Notes |
+  Match Side | GUID
+
+The build script (v2.2+) reads by header name, not column index, so minor column
+order variations are handled automatically. The source sheet is auto-detected (no
+hardcoded sheet name).
 
 ---
 
@@ -290,5 +300,6 @@ Before ending any productive session:
 Generic project-level next steps live here. Optional per-kit next steps live in that
 kit's notes file under `testers/`, if you keep one.
 
-- GitHub MCP credentials need to be refreshed (token expired 2026-06-14; MCP returned
-  "Bad credentials"). Reconnect GitHub in Settings > Connections before next commit.
+- Re-run any kits that were built with the buggy build_v2.1.py and produced bad output.
+  Use build_v2.2.py with the correct CONFIG values for each kit.
+- Cynthia Wilbur Top1500 was already rebuilt with v2.2 on 2026-06-14 and is clean.
