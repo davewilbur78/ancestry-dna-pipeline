@@ -1,6 +1,6 @@
 ---
 Ancestry DNA Match Pipeline CLAUDE.md
-Version: 2.6
+Version: 2.7
 Last updated: 2026-06-14 UTC
 ---
 
@@ -91,7 +91,24 @@ so replaying them is advanced and not required for a usable workbook.
 
 ### Step 4: Build Spreadsheet
 
-Run build_v2.2.py (or the current version) against the enriched input XLSX.
+TWO TRACKS -- use the one that fits the session context:
+
+TRACK A -- build_workbook.py (CLI, recommended for Claude Code sessions)
+  Takes the Genealogy Assistant CSV and the API results JSON directly.
+  No enriched XLSX intermediate required. Handles all formatting internally.
+  Usage:
+    python build_workbook.py \
+      --api-json  /tmp/{First}_{Last}_dna_api_results.json \
+      --input-csv /path/to/GA_export.csv \
+      --kit-url   "https://www.ancestry.com/dna/matches/GUID.../list" \
+      --first-name {First} --last-name {Last} --batch N \
+      --output-dir /path/to/output/
+
+TRACK B -- build_v2.2.py (CONFIG block, takes enriched XLSX as input)
+  Used when a prior step has already produced an enriched XLSX with hyperlinks.
+  Edit the CONFIG block at the top before running. No argparse.
+
+Both tracks produce identical output: the same 4-tab, 15-column workbook.
 
 - Workbook structure: 4 tabs in order: Start Here | Priority Matches | Watch List | All Matches
 - Column order (A-O): Match Name | Flag | Longest Segment | AScM | Unweighted cM |
@@ -213,8 +230,10 @@ ancestry-dna-pipeline/
 ├── CLAUDE.md                    -- this file, generic project brain
 ├── CHANGELOG.md                 -- session log
 ├── README.md                    -- human overview
-├── fetch_shared_dna.py          -- parameterized API collection script (local fallback)
-├── build_v2.2.py                -- workbook builder, current production version
+├── fetch_shared_dna.py          -- API collection script (local fallback, browser_cookie3)
+├── build_v2.2.py                -- workbook builder, CONFIG-block version (takes enriched XLSX)
+├── build_workbook.py            -- workbook builder, CLI version v3.0 (takes CSV + API JSON)
+├── CLAUDE_CODE_PIPELINE_PROMPT.md -- full Claude Code pipeline prompt (paste into Claude Code)
 ├── testers/                     -- OPTIONAL per-kit research notes (never required)
 │   ├── _TEMPLATE.md             -- blank notes template
 │   ├── adrienne-peckler.md
@@ -240,23 +259,35 @@ ancestry-dna-pipeline/
 ## Claude Code Conventions
 
 Working directory: wherever the kit's files are stored locally.
-Python dependencies: requests, browser-cookie3, openpyxl, pandas
+Python dependencies: openpyxl (required); requests, browser-cookie3 (fallback path only)
 Cookie source: Chrome (browser_cookie3 default) -- local fallback only; primary path is in-browser fetch
 API rate limiting: 150ms delay minimum between requests, concurrent batches of 50
 Tester GUID: always passed as a parameter to the script, never hardcoded
 
-### Build Script Versioning
-The workbook builder is versioned: build_v{MAJOR.MINOR}.py
-  MAJOR: significant structural changes (new tabs, schema changes)
-  MINOR: design improvements, bug fixes, cosmetic changes
-  Current production version: build_v2.2.py
+### Build Script Versions
+
+TWO builders, same output format:
+
+build_workbook.py v3.0 (CLI, preferred for Claude Code)
+  - argparse interface: --api-json, --input-csv, --kit-url, --first-name, --last-name,
+    --batch, --output-dir
+  - Takes Genealogy Assistant CSV + API results JSON directly
+  - No enriched XLSX intermediate needed
+  - Self-contained: builds hyperlinks, applies all formatting internally
+
+build_v2.2.py (CONFIG block, takes enriched XLSX)
+  - Edit CONFIG block at top before running
+  - TESTER_NAME, BATCH_NUM, SOURCE_FILE, OUTPUT_DIR, SCRIPT_VERSION = "2.2"
+  - Used when workflow has already produced an enriched XLSX
+
+Both produce the same 4-tab, 15-column workbook to the same spec.
 
 ### Output Naming
 Format: {FirstName}_{LastName}_{N}matches_{YYYYMMDD}_v{SCRIPT_VERSION}.xlsx
   - FirstName and LastName: REQUIRED, both always included
-  - N: total match count from the input file (all rows, not just priority matches)
-  - YYYYMMDD: modification date of the enriched input XLSX (auto-derived by the script)
-  - SCRIPT_VERSION: taken from SCRIPT_VERSION constant in the build script
+  - N: total match count (all rows, not just priority matches)
+  - YYYYMMDD: today's date (build_workbook.py) or enriched XLSX modification date (build_v2.2.py)
+  - SCRIPT_VERSION: from SCRIPT_VERSION constant in the builder
 
   Example: Lesley_Sterling_1000matches_20260612_v2.2.xlsx
 
@@ -265,18 +296,8 @@ forbidden -- a family shares one surname, so "Wilbur_..." is ambiguous across
 multiple kits. Apply the same FirstName_LastName rule to any companion files
 (e.g. Susan_Beyer_dna_api_results_Batch1.csv).
 
-### CONFIG Block (build script)
-At the top of every build script, a clearly marked CONFIG block contains:
-  TESTER_NAME    = "First Last"              # used in workbook header and output filename
-  BATCH_NUM      = "Batch N"                 # displayed in workbook subtitle
-  SOURCE_FILE    = "/path/to/input.xlsx"     # UPDATE THIS for each run
-  OUTPUT_DIR     = "/path/to/output/folder"  # UPDATE THIS for each run
-  SCRIPT_VERSION = "2.2"                     # drives output filename versioning
-
-The extraction date and output filename are derived automatically; do not set them.
-
-### Source XLSX Column Schema (enriched pipeline output)
-The build script reads the enriched XLSX produced by Steps 1-3. Expected headers:
+### Source XLSX Column Schema (enriched pipeline output, for build_v2.2.py)
+The build_v2.2.py script reads the enriched XLSX produced by Steps 1-3. Expected headers:
   Match Name | Longest Segment | AScM | Unweighted cM | Segments | Weighted cM |
   Family Tree | Tree Size | Common Ancestor | Line Assignment | Groups | Notes |
   Match Side | GUID
@@ -291,7 +312,7 @@ hardcoded sheet name).
 
 Before ending any productive session:
 1. New decisions about the pipeline itself? Update this file, bump version, commit.
-2. New files produced? Commit them (especially the current build_v*.py).
+2. New files produced? Commit them (especially build scripts and the pipeline prompt).
 3. Write a CHANGELOG entry.
 4. If you keep optional notes for a kit, record what's next there.
 
@@ -300,6 +321,8 @@ Before ending any productive session:
 Generic project-level next steps live here. Optional per-kit next steps live in that
 kit's notes file under `testers/`, if you keep one.
 
+- Pipeline infrastructure is complete: build_workbook.py v3.0 and
+  CLAUDE_CODE_PIPELINE_PROMPT.md v5.0 are committed and ready to use.
 - Re-run any kits that were built with the buggy build_v2.1.py and produced bad output.
-  Use build_v2.2.py with the correct CONFIG values for each kit.
+  Use build_workbook.py (or build_v2.2.py with correct CONFIG) for those.
 - Cynthia Wilbur Top1500 was already rebuilt with v2.2 on 2026-06-14 and is clean.
