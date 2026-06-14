@@ -1,7 +1,7 @@
 ---
 Ancestry DNA Match Pipeline CLAUDE.md
-Version: 2.4
-Last updated: 2026-06-05 UTC
+Version: 2.5
+Last updated: 2026-06-14 UTC
 ---
 
 ## Operating Model
@@ -41,9 +41,10 @@ GPS standards and Ashkenazi-specific endogamy awareness.
 2. Run the pipeline (Steps 1-5 below). Same steps, same output schema, every kit.
 3. Deliver the workbook.
 
-The Line Assignment column (which branch a match sits on) is the only thing that is
-ever kit-specific, and it is left blank by default. Fill it only when the user
-supplies a surname-to-branch mapping -- inline, or from that kit's optional notes file.
+The Family Line Assignment column (which branch a match sits on) is the only thing
+that is ever kit-specific, and it is left blank by default. Fill it only when the
+user supplies a surname-to-branch mapping -- inline, or from that kit's optional
+notes file.
 
 ---
 
@@ -89,19 +90,25 @@ bulk treeData/commonAncestors endpoints are POST-only, header-gated, and SPA-cac
 so replaying them is advanced and not required for a usable workbook.
 
 ### Step 4: Build Spreadsheet
-- Column order: Match Name | Longest Segment | AScM | Unweighted cM | Segments |
-  Weighted cM | Family Tree | Tree Size | Common Ancestor | Line Assignment |
-  Groups | Notes | Match Side | GUID
-- Match Name hyperlinks to match profile page
-- Family Tree hyperlinks to actual tree
-- Common Ancestor hyperlinks to ThruLines page
-- AScM = IFERROR(D/E, "") -- live Excel formula, not hardcoded
+
+Run build_v2.1.py (or the current version) against the enriched input XLSX.
+
+- Workbook structure: 4 tabs in order: Start Here | Priority Matches | Watch List | All Matches
+- Column order (A-O): Match Name | Flag | Longest Segment | AScM | Unweighted cM |
+  Segments | Weighted cM | Family Tree | Tree Size | Common Ancestor |
+  Family Line Assignment | Groups | Notes | Match Side | GUID (Reference Anchor)
+- Match Name: right-aligned, hyperlinked to profile comparison page, width 36
+- Flag (col B): shows ⚠️ when a match has only 1 or 2 segments (scrutiny required)
+- Family Tree: hyperlinked to tree compare view
+- Common Ancestor: shows 👥 icon, hyperlinked to ThruLines page
+- AScM = IFERROR(E/F, "") -- live Excel formula, not hardcoded
+- Greyed columns (Weighted cM, Match Side, GUID): #707070 italic, visible on all tier backgrounds
 - Color coding by tier (based on longest segment), the same for every kit:
-    RED:         longest < 20 OR AScM < 12 (fails filter)
-    LIGHT GREEN: longest 20-30 (passes, investigate)
-    MED GREEN:   longest 30-50 (solid signal)
-    DARK GREEN:  longest 50+ (high priority, bold black text on #70AD47)
-- Line Assignment column: left BLANK by default. Pre-fill it only when a
+    PINK:        does not meet one or both research criteria (longest < 20 OR AScM < 12)
+    LIGHT GREEN: longest 20-29 cM (passes, worth investigating)
+    MED GREEN:   longest 30-49 cM (solid signal)
+    DARK GREEN:  longest 50+ cM (high priority, bold black text on #70AD47)
+- Family Line Assignment column: left BLANK by default. Pre-fill it only when a
   surname-to-branch mapping is supplied (inline, or from the kit's optional notes).
   When filled, color by grandparent quadrant (fixed convention, cool = paternal,
   warm = maternal):
@@ -111,6 +118,10 @@ so replaying them is advanced and not required for a usable workbook.
     MM (maternal-maternal):   #FCE4D6 light coral
     Multiple:                 #E2CEEF light purple
 
+### Step 5: Deliver
+- Save workbook using the auto-naming convention (see Output Naming below)
+- Confirm tier breakdown: high / solid / investigate / watch / low counts
+
 ---
 
 ## AScM Filter and Thresholds
@@ -118,7 +129,8 @@ so replaying them is advanced and not required for a usable workbook.
 AScM = Unweighted cM / Number of Segments
 
 FILTER: AScM >= 12 AND Longest Segment >= 20 cM
-(Both conditions must be met to pass. Matches failing either are flagged red.)
+(Both conditions must be met to pass. Matches failing either are in the Watch List
+or Low Priority category -- pink rows.)
 
 TIER BASIS: Longest segment (not AScM -- distribution is too compressed for AScM tiers)
   Why: AScM in a typical Ashkenazi batch clusters tightly between 12-20.
@@ -184,8 +196,8 @@ There is no "active tester" to set and no config to load first.
 
 The files under `testers/` are optional research notes for kits where you want to
 track family lines, a surname-to-branch (quadrant) mapping, Ancestry group names, or
-batch history. Use one only if you want the Line Assignment column pre-filled, or to
-record ongoing research on a specific kit. They never gate workbook creation.
+batch history. Use one only if you want the Family Line Assignment column pre-filled,
+or to record ongoing research on a specific kit. They never gate workbook creation.
 
 To create a notes file: copy `testers/_TEMPLATE.md` to `testers/{firstname-lastname}.md`
 and fill in what you know; leave the rest blank. Mention the kit by name in a session
@@ -202,6 +214,7 @@ ancestry-dna-pipeline/
 ├── CHANGELOG.md                 -- session log
 ├── README.md                    -- human overview
 ├── fetch_shared_dna.py          -- parameterized API collection script (local fallback)
+├── build_v2.1.py                -- workbook builder, current production version
 ├── testers/                     -- OPTIONAL per-kit research notes (never required)
 │   ├── _TEMPLATE.md             -- blank notes template
 │   ├── adrienne-peckler.md
@@ -231,11 +244,36 @@ Python dependencies: requests, browser-cookie3, openpyxl, pandas
 Cookie source: Chrome (browser_cookie3 default) -- local fallback only; primary path is in-browser fetch
 API rate limiting: 150ms delay minimum between requests, concurrent batches of 50
 Tester GUID: always passed as a parameter to the script, never hardcoded
-Output naming: {FirstName}_{LastName}_DNA_Matches_Batch{N}.xlsx
-  REQUIRED: always include BOTH first and last name. Surname-only filenames are
-  forbidden -- a family shares one surname, so "Wilbur_..." is ambiguous across
-  multiple kits. Example: Cynthia_Wilbur_DNA_Matches_Batch1.xlsx. Apply the same
-  FirstName_LastName rule to any companion files (e.g. _dna_api_results_BatchN.csv).
+
+### Build Script Versioning
+The workbook builder is versioned: build_v{MAJOR.MINOR}.py
+  MAJOR: significant structural changes (new tabs, schema changes)
+  MINOR: design improvements, bug fixes, cosmetic changes
+  Current production version: build_v2.1.py
+
+### Output Naming
+Format: {FirstName}_{LastName}_{N}matches_{YYYYMMDD}_v{SCRIPT_VERSION}.xlsx
+  - FirstName and LastName: REQUIRED, both always included
+  - N: total match count from the input file (all rows, not just priority matches)
+  - YYYYMMDD: modification date of the enriched input XLSX (auto-derived by the script)
+  - SCRIPT_VERSION: taken from SCRIPT_VERSION constant in the build script
+  
+  Example: Lesley_Sterling_1000matches_20260612_v2.1.xlsx
+
+REQUIRED: always include BOTH first and last name. Surname-only filenames are
+forbidden -- a family shares one surname, so "Wilbur_..." is ambiguous across
+multiple kits. Apply the same FirstName_LastName rule to any companion files
+(e.g. Susan_Beyer_dna_api_results_Batch1.csv).
+
+### CONFIG Block (build script)
+At the top of every build script, a clearly marked CONFIG block contains:
+  TESTER_NAME    = "First Last"        # used in workbook header and output filename
+  BATCH_NUM      = "Batch N"           # displayed in workbook subtitle
+  SOURCE_FILE    = "/path/to/input.xlsx"
+  OUTPUT_DIR     = "/path/to/output/folder"
+  SCRIPT_VERSION = "2.1"               # drives output filename versioning
+
+The extraction date and output filename are derived automatically; do not set them.
 
 ---
 
@@ -243,7 +281,7 @@ Output naming: {FirstName}_{LastName}_DNA_Matches_Batch{N}.xlsx
 
 Before ending any productive session:
 1. New decisions about the pipeline itself? Update this file, bump version, commit.
-2. New files produced? Commit them.
+2. New files produced? Commit them (especially the current build_v*.py).
 3. Write a CHANGELOG entry.
 4. If you keep optional notes for a kit, record what's next there.
 
@@ -251,3 +289,6 @@ Before ending any productive session:
 
 Generic project-level next steps live here. Optional per-kit next steps live in that
 kit's notes file under `testers/`, if you keep one.
+
+- GitHub MCP credentials need to be refreshed (token expired 2026-06-14; MCP returned
+  "Bad credentials"). Reconnect GitHub in Settings > Connections before next commit.
